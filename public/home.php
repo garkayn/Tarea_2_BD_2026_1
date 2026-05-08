@@ -67,5 +67,8 @@ $mis_postulaciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <br>
     <br />
     <div id="display"></div>
+    
+    <br><br>
+    <a href="logout.php">Cerrar Sesión</a>
 
 <?php view('footer') ?>

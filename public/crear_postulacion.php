@@ -93,7 +93,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <div class="container" style="max-width: 800px; margin: 0 auto; padding: 20px;">
     <h2>Registrar Nueva Postulación</h2>
-    <p>Complete los siguientes datos. El código de seguimiento se generará automáticamente.</p>
+    <p>Complete los siguientes datos.</p>
 
     <form method="POST" action="crear_postulacion.php">
         
@@ -146,6 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
 
         <button type="submit" style="padding: 10px 20px; background-color; color: white; border: none; cursor: pointer;">Guardar y Enviar Postulación</button>
+        <br><br>
         <a href="home.php" style="margin-left: 15px; text-decoration: none; ">Cancelar</a>
     </form>
 </div>
