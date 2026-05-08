@@ -26,10 +26,12 @@ INSERT INTO sede (id_sede, nombre_sede) VALUES
 (5, 'Sede Concepción');
 
 INSERT INTO estado_postulacion (id_estado_postulacion, nombre_estado_postulacion) VALUES 
-(1, 'En Revisión'),
-(2, 'Aprobada'),
-(3, 'Rechazada'),
-(4, 'Cerrada');
+(1, 'Borrador'),
+(2, 'Envíado'),
+(3, 'En Revisión'),
+(4, 'Aprobada'),
+(5, 'Rechazada'),
+(6, 'Cerrada');
 
 INSERT INTO tipo_iniciativa (id_tipo_iniciativa, nombre_tipo_iniciativa) VALUES 
 (1, 'Nueva'),
