@@ -3,7 +3,7 @@ require_once '../src/bootstrap.php';
 require_once '../src/inc/auth.php';
 require_login();
 
-// Validar usuario y su rol
+// Conseguir usuario y rol
 $usuarioActual = current_user();
 $tipoUsuario = $_SESSION['id_rol'] ?? null;
 
@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $siguienteNumero = ($resultadoMax['max_num'] ?? 0) + 1;
         
         // Código de postulación: 1000 + numero_postulacion
-        $codigoGenerado = 1000 + $siguienteNumero; 
+        $codigoGenerado = 1000 + $siguienteNumero;
 
         $sqlPostulacion = "INSERT INTO postulacion (
                             codigo_postulacion, fecha_postulacion, responsable_1, responsable_2, 
@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                           ) VALUES (
                             :codigo, :fecha, :user, 'Juan Carlos', 
                             :numero, :presupuesto, 1, 8, 
-                            8, :rut, 2
+                            8, :rut, 1
                           )";
                           
         $stmtPost = db()->prepare($sqlPostulacion);

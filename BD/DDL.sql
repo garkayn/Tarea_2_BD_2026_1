@@ -69,7 +69,7 @@ CREATE TABLE postulacion (
     codigo_postulacion INT PRIMARY KEY,
     fecha_postulacion DATE NOT NULL,
     responsable_1 VARCHAR(50) NOT NULL,
-    responsable_2 VARCHAR(50) NOT NULL,
+    responsable_2 VARCHAR(50),
     numero_postulacion INT NOT NULL UNIQUE,
     presupuesto INT NOT NULL,
     id_sede INT,
@@ -127,16 +127,23 @@ CREATE TABLE usuario (
 ) ENGINE=InnoDB;
 
 CREATE VIEW VistaMisPostulaciones AS
-SELECT 
-    postulacion.codigo_postulacion,
-    postulacion.numero_postulacion,
-    postulacion.fecha_postulacion,
+SELECT
+    postulacion.*,
     iniciativa.nombre_iniciativa,
-    postulacion.responsable_1,
-    postulacion.responsable_2,
+    iniciativa.descripcion,
+    iniciativa.solucion,
+    iniciativa.resultados_esperados,
+    iniciativa.documentos,
     estado_postulacion.nombre_estado_postulacion,
-    sede.nombre_sede
+    sede.nombre_sede,
+    empresa.nombre_empresa,
+    re.nombre_region AS nombre_region_ejecucion,
+    ri.nombre_region AS nombre_region_impacto,
+
 FROM postulacion
-JOIN iniciativa ON postulacion.codigo_postulacion = iniciativa.codigo_postulacion
-JOIN estado_postulacion ON postulacion.id_estado_postulacion = estado_postulacion.id_estado_postulacion
-JOIN sede ON postulacion.id_sede = sede.id_sede;
+LEFT JOIN iniciativa ON postulacion.codigo_postulacion = iniciativa.codigo_postulacion
+LEFT JOIN estado_postulacion ON postulacion.id_estado_postulacion = estado_postulacion.id_estado_postulacion
+LEFT JOIN sede ON postulacion.id_sede = sede.id_sede
+LEFT JOIN empresa ON postulacion.rut_empresa = empresa.rut_empresa
+LEFT JOIN region re ON postulacion.id_region_ejecucion = re.id_region
+LEFT JOIN region ri ON postulacion.id_region_impacto = ri.id_region;

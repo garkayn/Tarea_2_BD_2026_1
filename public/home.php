@@ -20,7 +20,14 @@ $mis_postulaciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <?php view('header', ['title' => 'Mis Postulaciones']) ?>
 
 <h2>Bienvenido, <?= htmlspecialchars($usuarioActual) ?></h2>
+<br>
 <h3>Tus Postulaciones Asignadas (<?= count($mis_postulaciones) ?>)</h3>
+<br>
+<!-- Barra de busqueda -->
+<div style="margin-bottom: 20px;">
+    <label for="search"><strong>Buscar postulación:</strong></label>
+    <input type="text" id="search" placeholder="Escribe un código, iniciativa o estado..." style="padding: 8px; width: 300px;" />
+</div>
 
 <?php if (count($mis_postulaciones) > 0): ?>
     <table border="1">
@@ -42,8 +49,8 @@ $mis_postulaciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <td><?= htmlspecialchars($postulacion['nombre_sede']) ?></td>
                     <td><?= htmlspecialchars($postulacion['fecha_postulacion']) ?></td>
                     <td>
-                        <a href="editar_postulacion.php?codigo=<?= urlencode($postulacion['codigo_postulacion']) ?>">
-                            Editar
+                        <a href="detalle_postulacion.php?codigo=<?= urlencode($postulacion['codigo_postulacion']) ?>">
+                            Ver +
                         </a>
                     </td>
                 </tr>
@@ -53,22 +60,40 @@ $mis_postulaciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <?php else: ?>
     <p>No tienes postulaciones asignadas en este momento.</p>
 <?php endif; ?>
-    <br><br>
+<br><br>
 
-    <?php if ($tipoUsuario==1): ?>
-    <a href="crear_postulacion.php">
-        Crear nueva postulación
-    </a>
-    <?php endif; ?>
+<?php if ($tipoUsuario==1): ?>
+<a href="crear_postulacion.php">
+    Crear nueva postulación
+</a>
+<?php endif; ?>
 
-    <br><br>
-    <!-- Barra de busqueda -->
-    <input type="text" id="search" placeholder="Search" />
-    <br>
-    <br />
-    <div id="display"></div>
-    
-    <br><br>
-    <a href="logout.php">Cerrar Sesión</a>
+<br>
+<a href="logout.php">Cerrar Sesión</a>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('search');
+        
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                
+                const searchTerm = this.value.toLowerCase();
+                
+                const rows = document.querySelectorAll('tbody tr');
+
+                rows.forEach(row => {
+                    const rowText = row.textContent.toLowerCase();
+                    
+                    if (rowText.includes(searchTerm)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            });
+        }
+    });
+</script>
 
 <?php view('footer') ?>
