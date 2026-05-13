@@ -12,11 +12,17 @@ if ($tipoUsuario != 1) {
     die("Acceso denegado: Solo los responsables académicos pueden crear postulaciones.");
 }
 
+$mensaje_error = '';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Recibir datos ingresados por el usuario
     $presupuesto       = $_POST['presupuesto'];
-    $rutEmpresa        = $_POST['rut_empresa'];
+    $rutEmpresa        = $_POST['rut_empresa']; // Ahora este valor viene del <select>
+    
+    $idSede            = $_POST['id_sede'];
+    $idRegionEjecucion = $_POST['id_region_ejecucion'];
+    $idRegionImpacto   = $_POST['id_region_impacto'];
     
     $nombre      = $_POST['nombre_iniciativa'];
     $descripcion = $_POST['descripcion'];
@@ -35,31 +41,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmtMax = db()->query($sqlMax);
         $resultadoMax = $stmtMax->fetch(PDO::FETCH_ASSOC);
         
-        $siguienteNumero = ($resultadoMax['max_num'] ?? 0) + 1;
-        
         // Código de postulación: 1000 + numero_postulacion
+        $siguienteNumero = ($resultadoMax['max_num'] ?? 0) + 1;
         $codigoGenerado = 1000 + $siguienteNumero;
 
+        // Insertar postulación
         $sqlPostulacion = "INSERT INTO postulacion (
                             codigo_postulacion, fecha_postulacion, responsable_1, responsable_2, 
                             numero_postulacion, presupuesto, id_sede, id_region_ejecucion, 
                             id_region_impacto, rut_empresa, id_estado_postulacion
                           ) VALUES (
-                            :codigo, :fecha, :user, 'Juan Carlos', 
-                            :numero, :presupuesto, 1, 8, 
-                            8, :rut, 1
+                            :codigo, :fecha, :user, NULL, 
+                            :numero, :presupuesto, :sede, :region_ejecucion, 
+                            :region_impacto, :rut, 1
                           )";
                           
         $stmtPost = db()->prepare($sqlPostulacion);
         $stmtPost->execute([
-            'codigo'      => $codigoGenerado,
-            'fecha'       => $fechaActual,
-            'user'        => $usuarioActual,
-            'numero'      => $siguienteNumero,
-            'presupuesto' => $presupuesto,
-            'rut'         => $rutEmpresa
+            'codigo'           => $codigoGenerado,
+            'fecha'            => $fechaActual,
+            'user'             => $usuarioActual,
+            'numero'           => $siguienteNumero,
+            'presupuesto'      => $presupuesto,
+            'sede'             => $idSede,
+            'region_ejecucion' => $idRegionEjecucion,
+            'region_impacto'   => $idRegionImpacto,
+            'rut'              => $rutEmpresa
         ]);
 
+        // Insertar iniciativa
         $sqlIniciativa = "INSERT INTO iniciativa (
                             nombre_iniciativa, descripcion, solucion, 
                             resultados_esperados, documentos, codigo_postulacion, id_tipo_iniciativa
@@ -79,14 +89,123 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'tipo'   => $tipo
         ]);
 
+         // Se recibe la lista con todos los datos de los integrantes
+        $ruts = $_POST['rut_integrante'] ?? [];
+        $nombres = $_POST['nombre_integrante'] ?? [];
+        $deptos = $_POST['depto_integrante'] ?? [];
+        $emails = $_POST['email_integrante'] ?? [];
+        $telefonos = $_POST['telefono_integrante'] ?? [];
+        $sedes = $_POST['id_sede_integrante'] ?? [];
+        $tipos = $_POST['tipo_integrante'] ?? [];
+        $roles = $_POST['rol_integrante'] ?? [];
+
+        // Se guarda cada persona en integrante y luego se asocia a la postulación en equipo
+        for ($i = 0; $i < count($ruts); $i++) {
+            $rut_actual = $ruts[$i];
+            
+            // Si el integrante ya existe, se ignora porque el RUT identifica a la persona
+            $sqlIntegrante = "INSERT IGNORE INTO integrante (
+                                rut_integrante, nombre_integrante, depto_integrante,
+                                email_integrante, telefono_integrante, id_sede, id_tipo_persona
+                            ) VALUES (
+                                :rut, :nombre, :depto, :email, :telefono, :sede, :tipo
+                            )";
+
+            $stmtInt = db()->prepare($sqlIntegrante);
+            $stmtInt->execute([
+                'rut'      => $rut_actual,
+                'nombre'   => $nombres[$i],
+                'depto'    => $deptos[$i],
+                'email'    => $emails[$i],
+                'telefono' => $telefonos[$i],
+                'sede'     => $sedes[$i],
+                'tipo'     => $tipos[$i]
+            ]);
+
+            // El rol sí se guarda en equipo, porque depende de la postulación
+            $sqlEquipo = "INSERT INTO equipo (codigo_postulacion, rut_integrante, rol_integrante) 
+                          VALUES (:codigo, :rut, :rol)";
+
+            $stmtEq = db()->prepare($sqlEquipo);
+            $stmtEq->execute([
+                'codigo' => $codigoGenerado,
+                'rut'    => $rut_actual,
+                'rol'    => $roles[$i]
+            ]);
+        }
+
+        // Guardar etapas y enlazarlas con el cronograma de la postulación
+        $nombres_etapas = $_POST['nombre_etapa'] ?? [];
+        $plazos_etapas = $_POST['plazo_etapa'] ?? [];
+        $entregables_etapas = $_POST['entregable_etapa'] ?? [];
+
+        for ($j = 0; $j < count($nombres_etapas); $j++) {
+            $sqlEtapa = "INSERT INTO etapa (nombre_etapa, plazo, entregable) 
+                         VALUES (:nombre, :plazo, :entregable)";
+            
+            $stmtEt = db()->prepare($sqlEtapa);
+            $stmtEt->execute([
+                'nombre'     => $nombres_etapas[$j],
+                'plazo'      => $plazos_etapas[$j],
+                'entregable' => $entregables_etapas[$j]
+            ]);
+
+            $id_nueva_etapa = db()->lastInsertId();
+
+            $sqlCronograma = "INSERT INTO cronograma (codigo_postulacion, cod_etapa) 
+                              VALUES (:codigo, :etapa)";
+            
+            $stmtCron = db()->prepare($sqlCronograma);
+            $stmtCron->execute([
+                'codigo' => $codigoGenerado,
+                'etapa'  => $id_nueva_etapa
+            ]);
+        }
+
+        // Llamadas a los procedimientos almacenados
+        //$sqlRevisarEquipo = "CALL VerificarRequisitoEquipo(:codigo)";
+        //$stmtRevisarEq = db()->prepare($sqlRevisarEquipo);
+        //$stmtRevisarEq->execute(['codigo' => $codigoGenerado]);
+
+        $sqlRevisarCronograma = "CALL VerificarRequisitoCronograma(:codigo)";
+        $stmtRevisarCr = db()->prepare($sqlRevisarCronograma);
+        $stmtRevisarCr->execute(['codigo' => $codigoGenerado]);
+
+        // Si todo pasó, marcamos la postulación como "Enviada" (1)
+        $sqlEstado = "UPDATE postulacion SET id_estado_postulacion = 1 WHERE codigo_postulacion = :codigo";
+        $stmtEstado = db()->prepare($sqlEstado);
+        $stmtEstado->execute(['codigo' => $codigoGenerado]);
+
         db()->commit();
         redirect_to('home.php');
 
     } catch (Exception $e) {
         db()->rollBack();
-        die("Error crítico al guardar en la base de datos: " . $e->getMessage());
+        
+        $error_crudo = $e->getMessage();
+        if ($e->getCode() == '45000' || strpos($error_crudo, '45000') !== false) {
+            $partes = explode('1644', $error_crudo);
+            if (isset($partes[1])) {
+                $mensaje_error = trim($partes[1]); 
+            } else {
+                $mensaje_error = "Error: La postulación no cumple con los requisitos mínimos.";
+            }
+        } else {
+            $mensaje_error = "Ocurrió un error inesperado en la base de datos: " . $error_crudo;
+        }
     }
 }
+
+// Consultas para traer datos de selectores
+$stmtEmpresas = db()->query("SELECT DISTINCT rut_empresa, nombre_empresa FROM empresa ORDER BY nombre_empresa ASC");
+$listaEmpresas = $stmtEmpresas->fetchAll(PDO::FETCH_ASSOC);
+
+$stmtRegiones = db()->query("SELECT id_region, nombre_region FROM region ORDER BY id_region ASC");
+$listaRegiones = $stmtRegiones->fetchAll(PDO::FETCH_ASSOC);
+
+$stmtSedes = db()->query("SELECT id_sede, nombre_sede FROM sede ORDER BY id_sede ASC");
+$listaSedes = $stmtSedes->fetchAll(PDO::FETCH_ASSOC);
+
 ?>
 
 <?php view('header', ['title' => 'Crear Nueva Postulación']) ?>
@@ -94,13 +213,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="container" style="max-width: 800px; margin: 0 auto; padding: 20px;">
     <h2>Registrar Nueva Postulación</h2>
     <p>Complete los siguientes datos.</p>
+    
+    <?php if (!empty($mensaje_error)): ?>
+        <div style="background-color: #f8d7da; color: #721c24; padding: 15px; border: 1px solid #f5c6cb; border-radius: 5px; margin-bottom: 20px;">
+            <strong>¡Atención!</strong> <?php echo htmlspecialchars($mensaje_error); ?>
+        </div>
+    <?php endif; ?>
 
     <form method="POST" action="crear_postulacion.php">
         
         <h3>1. Datos Generales</h3>
+
         <div class="form-group" style="margin-bottom: 15px;">
-            <label style="display: block; font-weight: bold;">RUT Empresa Externa:</label>
-            <input type="text" name="rut_empresa" placeholder="12.345.678-9" style="width: 100%; padding: 8px;" required>
+            <label style="display: block; font-weight: bold;">Empresa Externa Asignada:</label>
+            <select name="rut_empresa" style="width: 100%; padding: 8px;" required>
+                <option value="">-- Seleccione una Empresa --</option>
+                <?php foreach ($listaEmpresas as $empresa): ?>
+                    <option value="<?= htmlspecialchars($empresa['rut_empresa']) ?>">
+                        <?= htmlspecialchars($empresa['nombre_empresa']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label style="display: block; font-weight: bold;">Sede USM Responsable:</label>
+            <select name="id_sede" style="width: 100%; padding: 8px;" required>
+                <option value="">-- Seleccione Sede --</option>
+                <?php foreach ($listaSedes as $sede): ?>
+                    <option value="<?= htmlspecialchars($sede['id_sede']) ?>">
+                        <?= htmlspecialchars($sede['nombre_sede']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label style="display: block; font-weight: bold;">Región de Ejecución:</label>
+            <select name="id_region_ejecucion" style="width: 100%; padding: 8px;" required>
+                <option value="">-- Seleccione Región --</option>
+                <?php foreach ($listaRegiones as $region): ?>
+                    <option value="<?= htmlspecialchars($region['id_region']) ?>">
+                        <?= htmlspecialchars($region['nombre_region']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+
+        <div class="form-group" style="margin-bottom: 15px;">
+            <label style="display: block; font-weight: bold;">Región de Impacto:</label>
+            <select name="id_region_impacto" style="width: 100%; padding: 8px;" required>
+                <option value="">-- Seleccione Región --</option>
+                <?php foreach ($listaRegiones as $region): ?>
+                    <option value="<?= htmlspecialchars($region['id_region']) ?>">
+                        <?= htmlspecialchars($region['nombre_region']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
         </div>
 
         <div class="form-group" style="margin-bottom: 15px;">
@@ -118,7 +287,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <div class="form-group" style="margin-bottom: 15px;">
             <label style="display: block; font-weight: bold;">Descripción del Problema:</label>
-            <textarea name="descipcion" rows="4" style="width: 100%; padding: 8px;" required></textarea>
+            <textarea name="descripcion" rows="4" style="width: 100%; padding: 8px;" required></textarea>
         </div>
 
         <div class="form-group" style="margin-bottom: 15px;">
@@ -139,16 +308,93 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="form-group" style="margin-bottom: 25px;">
             <label style="display: block; font-weight: bold;">Tipo de Iniciativa:</label>
             <select name="id_tipo_iniciativa" style="width: 100%; padding: 8px;">
-                <option value="1">Académica</option>
-                <option value="2">Investigación</option>
-                <option value="3">Vinculación</option>
+                <option value="1">Nueva</option>
+                <option value="2">Existente</option>
             </select>
         </div>
 
-        <button type="submit" style="padding: 10px 20px; background-color; color: white; border: none; cursor: pointer;">Guardar y Enviar Postulación</button>
-        <br><br>
-        <a href="home.php" style="margin-left: 15px; text-decoration: none; ">Cancelar</a>
+        <hr style="margin: 30px 0;">
+
+        <h3>3. Equipo de Trabajo</h3>
+        <p style="font-size: 0.9em; color: #555;">Agregue a los profesores y alumnos del proyecto (mínimo 3 profesores y 5 alumnos).</p>
+        
+        <div id="contenedor-equipo"></div>
+
+        <button type="button" id="btn-agregar-integrante" style="padding: 8px 15px; background-color: #28a745; color: white; border: none; cursor: pointer; border-radius: 4px; margin-bottom: 20px;">
+            + Agregar Integrante
+        </button>
+
+        <hr style="margin: 30px 0;">
+
+        <h3>4. Cronograma de Etapas</h3>
+        <p style="font-size: 0.9em; color: #555;">Defina las etapas, plazos y entregables de su proyecto (Su cronograma completo no puede superar las 36 semanas).</p>
+        
+        <div id="contenedor-etapas"></div>
+
+        <button type="button" id="btn-agregar-etapa" style="padding: 8px 15px; background-color: #28a745; color: white; border: none; cursor: pointer; border-radius: 4px; margin-bottom: 30px;">
+            + Agregar Etapa
+        </button>
+        <br>
+
+        <button type="submit" style="padding: 10px 20px; background-color: #7952b3; color: white; border: none; cursor: pointer;">Guardar y Enviar Postulación</button>
+        <a href="home.php" style="margin-left: 15px; text-decoration: none; color: #dc3545;">Cancelar</a>
     </form>
 </div>
+
+<script>
+// Manejo Dinámico de Integrantes
+document.getElementById('btn-agregar-integrante').addEventListener('click', function() {
+    var container = document.getElementById('contenedor-equipo');
+    var row = document.createElement('div');
+    
+    row.style.display = 'flex';
+    row.style.flexWrap = 'wrap';
+    row.style.gap = '10px';
+    row.style.marginBottom = '10px';
+    
+    row.innerHTML = `
+        <input type="text" name="rut_integrante[]" placeholder="RUT (ej: 12345678-9)" style="flex: 1 1 150px; padding: 8px;" required>
+        <input type="text" name="nombre_integrante[]" placeholder="Nombre completo" style="flex: 1 1 220px; padding: 8px;" required>
+        <input type="text" name="depto_integrante[]" placeholder="Departamento" style="flex: 1 1 180px; padding: 8px;" required>
+        <input type="email" name="email_integrante[]" placeholder="Correo institucional" style="flex: 1 1 220px; padding: 8px;" required>
+        <input type="number" name="telefono_integrante[]" placeholder="Teléfono" style="flex: 1 1 130px; padding: 8px;" required>
+        <select name="id_sede_integrante[]" style="flex: 1 1 220px; padding: 8px;" required>
+            <option value="">Seleccione sede...</option>
+            <option value="1">Campus Casa Central Valparaíso</option>
+            <option value="2">Campus San Joaquín</option>
+            <option value="3">Campus Vitacura</option>
+            <option value="4">Sede Viña del Mar</option>
+            <option value="5">Sede Concepción</option>
+        </select>
+        <select name="tipo_integrante[]" style="flex: 1 1 150px; padding: 8px;" required>
+            <option value="">Tipo de persona...</option>
+            <option value="1">Profesor</option>
+            <option value="2">Estudiante</option>
+        </select>
+        <input type="text" name="rol_integrante[]" placeholder="Rol en el proyecto" style="flex: 1 1 180px; padding: 8px;" required>
+        <button type="button" onclick="this.parentElement.remove()" style="background-color: #dc3545; color: white; border: none; padding: 8px; cursor: pointer; border-radius: 4px;">X</button>
+    `;
+    container.appendChild(row);
+});
+
+// Manejo Dinámico de Etapas del Cronograma
+document.getElementById('btn-agregar-etapa').addEventListener('click', function() {
+    var container = document.getElementById('contenedor-etapas');
+    var row = document.createElement('div');
+    
+    row.style.display = 'flex';
+    row.style.flexWrap = 'wrap';
+    row.style.gap = '10px';
+    row.style.marginBottom = '10px';
+    
+    row.innerHTML = `
+        <input type="text" name="nombre_etapa[]" placeholder="Nombre de la etapa" style="flex: 1 1 250px; padding: 8px;" required>
+        <input type="number" name="plazo_etapa[]" placeholder="Plazo (semanas)" style="flex: 1 1 100px; padding: 8px;" required>
+        <input type="text" name="entregable_etapa[]" placeholder="Entregable esperado" style="flex: 1 1 300px; padding: 8px;" required>
+        <button type="button" onclick="this.parentElement.remove()" style="background-color: #dc3545; color: white; border: none; padding: 8px; cursor: pointer; border-radius: 4px;">X</button>
+    `;
+    container.appendChild(row);
+});
+</script>
 
 <?php view('footer') ?>

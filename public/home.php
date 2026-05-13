@@ -5,14 +5,18 @@ require_login();
 $usuarioActual = current_user();
 $tipoUsuario = $_SESSION['id_rol'] ?? null;
 
-$sql = "SELECT VistaMisPostulaciones.*
-        FROM VistaMisPostulaciones
-        JOIN usuario ON (VistaMisPostulaciones.responsable_1 = usuario.username 
-                      OR VistaMisPostulaciones.responsable_2 = usuario.username)
-        WHERE usuario.username = :username";
+$sql = "SELECT * FROM VistaMisPostulaciones";
+$parametros = [];
+
+if ($tipoUsuario != 3) {
+    // Consulta solo las postulaciones asignadas al usuario
+    $sql .= " WHERE responsable_1 = :user1 OR responsable_2 = :user2";
+    $parametros['user1'] = $usuarioActual;
+    $parametros['user2'] = $usuarioActual;
+}
 
 $stmt = db()->prepare($sql);
-$stmt->execute(['username' => $usuarioActual]);
+$stmt->execute($parametros);
 $mis_postulaciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 ?>
@@ -26,14 +30,14 @@ $mis_postulaciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <!-- Barra de busqueda -->
 <div style="margin-bottom: 20px;">
     <label for="search"><strong>Buscar postulación:</strong></label>
-    <input type="text" id="search" placeholder="Escribe un código, iniciativa o estado..." style="padding: 8px; width: 300px;" />
+    <input type="text" id="search" placeholder="Escribe un número, iniciativa o empresa..." style="padding: 8px; width: 310px;" />
 </div>
 
 <?php if (count($mis_postulaciones) > 0): ?>
     <table border="1">
         <thead>
             <tr>
-                <th>Código</th>
+                <th>Número de postulación</th>
                 <th>Iniciativa</th>
                 <th>Estado</th>
                 <th>Sede</th>
@@ -43,7 +47,7 @@ $mis_postulaciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <tbody>
             <?php foreach ($mis_postulaciones as $postulacion): ?>
                 <tr>
-                    <td><?= htmlspecialchars($postulacion['codigo_postulacion']) ?></td>
+                    <td><?= htmlspecialchars($postulacion['numero_postulacion']) ?></td>
                     <td><?= htmlspecialchars($postulacion['nombre_iniciativa']) ?></td>
                     <td><?= htmlspecialchars($postulacion['nombre_estado_postulacion']) ?></td>
                     <td><?= htmlspecialchars($postulacion['nombre_sede']) ?></td>

@@ -139,6 +139,7 @@ SELECT
     empresa.nombre_empresa,
     re.nombre_region AS nombre_region_ejecucion,
     ri.nombre_region AS nombre_region_impacto,
+    tipo_iniciativa.nombre_tipo_iniciativa
 
 FROM postulacion
 LEFT JOIN iniciativa ON postulacion.codigo_postulacion = iniciativa.codigo_postulacion
@@ -146,4 +147,92 @@ LEFT JOIN estado_postulacion ON postulacion.id_estado_postulacion = estado_postu
 LEFT JOIN sede ON postulacion.id_sede = sede.id_sede
 LEFT JOIN empresa ON postulacion.rut_empresa = empresa.rut_empresa
 LEFT JOIN region re ON postulacion.id_region_ejecucion = re.id_region
-LEFT JOIN region ri ON postulacion.id_region_impacto = ri.id_region;
+LEFT JOIN region ri ON postulacion.id_region_impacto = ri.id_region
+LEFT JOIN tipo_iniciativa ON iniciativa.id_tipo_iniciativa = tipo_iniciativa.id_tipo_iniciativa;
+
+DELIMITER //
+CREATE TRIGGER trg_validar_presupuesto
+BEFORE insert ON postulacion
+FOR EACH ROW
+BEGIN
+    IF NEW.presupuesto < 0 THEN
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'Error: El presupuesto ingresado no puede ser un valor negativo.';
+    END IF;
+END 
+// DELIMITER ;
+
+DELIMITER //
+
+CREATE PROCEDURE VerificarRequisitoEquipo(
+    IN ejecucion_codigo_postulacion INT
+)
+BEGIN    
+    DECLARE cantidad_profesores INT;
+    DECLARE cantidad_estudiantes INT;
+
+    SELECT 
+        COUNT(*) INTO cantidad_profesores
+    FROM equipo
+    INNER JOIN integrante ON equipo.rut_integrante = integrante.rut_integrante
+    INNER JOIN tipo_persona ON integrante.id_tipo_persona = tipo_persona.id_tipo_persona
+    WHERE equipo.codigo_postulacion = ejecucion_codigo_postulacion 
+    AND tipo_persona.nombre_tipo_persona = 'Profesor';  
+ 
+    SELECT 
+        COUNT(*) INTO cantidad_estudiantes
+    FROM equipo
+    INNER JOIN integrante ON equipo.rut_integrante = integrante.rut_integrante
+    INNER JOIN tipo_persona ON integrante.id_tipo_persona = tipo_persona.id_tipo_persona
+    WHERE equipo.codigo_postulacion = ejecucion_codigo_postulacion 
+    AND tipo_persona.nombre_tipo_persona = 'Estudiante'; 
+
+    IF cantidad_profesores < 3 THEN
+
+        UPDATE postulacion
+        SET id_estado_postulacion = 3
+        WHERE codigo_postulacion = ejecucion_codigo_postulacion;
+        
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'Error: El equipo debe tener un mínimo de 3 profesores para enviar la postulación.';
+
+    ELSEIF cantidad_estudiantes < 5 THEN  
+        
+        UPDATE postulacion
+        SET id_estado_postulacion = 3
+        WHERE codigo_postulacion = ejecucion_codigo_postulacion;
+        
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'Error: El equipo debe tener un mínimo de 5 alumnos para enviar la postulación.';
+
+    ELSE
+
+        UPDATE postulacion
+        SET id_estado_postulacion = 2
+        WHERE codigo_postulacion = ejecucion_codigo_postulacion;
+
+    END IF;
+
+END
+// 
+DELIMITER ;
+
+DELIMITER //
+CREATE PROCEDURE VerificarRequisitoCronograma(
+    IN ejecucion_codigo_postulacion INT
+)
+BEGIN
+    DECLARE suma_plazos INT;
+
+    SELECT COALESCE(SUM(etapa.plazo), 0) INTO suma_plazos
+    FROM cronograma
+    INNER JOIN etapa ON cronograma.cod_etapa = etapa.cod_etapa
+    WHERE cronograma.codigo_postulacion = ejecucion_codigo_postulacion;
+
+    IF suma_plazos > 36 THEN  
+        SIGNAL SQLSTATE '45000' 
+        SET MESSAGE_TEXT = 'Error: La suma de las etapas del cronograma no puede superar las 36 semanas (9 meses).';
+    END IF;
+END
+// 
+DELIMITER ;
