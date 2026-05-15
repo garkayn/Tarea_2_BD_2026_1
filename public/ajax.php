@@ -7,13 +7,13 @@ if (isset($_POST['search'])) {
     $nameFromAjax = $_POST['search'];
     $searchTerm = '%' . $nameFromAjax . '%';
 
-    $sql = "SELECT p.codigo_postulacion, i.nombre_iniciativa, e.nombre_empresa
-            FROM postulacion p
-            JOIN iniciativa i ON i.codigo_postulacion = p.codigo_postulacion
-            JOIN empresa e ON e.rut_empresa = p.rut_empresa
-            WHERE p.codigo_postulacion LIKE :search 
-               OR i.nombre_iniciativa LIKE :search 
-               OR e.nombre_empresa LIKE :search
+    $sql = "SELECT postulacion.codigo_postulacion, iniciativa.nombre_iniciativa, empresa.nombre_empresa
+            FROM postulacion
+            JOIN iniciativa ON iniciativa.codigo_postulacion = postulacion.codigo_postulacion
+            JOIN empresa ON empresa.rut_empresa = postulacion.rut_empresa
+            WHERE postulacion.codigo_postulacion LIKE :search 
+               OR iniciativa.nombre_iniciativa LIKE :search 
+               OR empresa.nombre_empresa LIKE :search
             LIMIT 5";
 
     $stmt = db()->prepare($sql); 

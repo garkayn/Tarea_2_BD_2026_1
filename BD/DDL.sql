@@ -160,7 +160,8 @@ BEGIN
         SET MESSAGE_TEXT = 'Error: El presupuesto ingresado no puede ser un valor negativo.';
     END IF;
 END 
-// DELIMITER ;
+// 
+DELIMITER ;
 
 DELIMITER //
 
@@ -235,4 +236,20 @@ BEGIN
     END IF;
 END
 // 
+DELIMITER ;
+
+DELIMITER //
+CREATE FUNCTION CalcularPresupuestoTotal() 
+RETURNS BIGINT
+READS SQL DATA
+BEGIN
+    DECLARE suma_total BIGINT;
+
+    SELECT SUM(presupuesto) INTO suma_total
+    FROM postulacion;
+
+    RETURN IFNULL(suma_total, 0);
+
+END    
+//
 DELIMITER ;
