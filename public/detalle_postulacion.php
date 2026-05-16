@@ -86,152 +86,181 @@ $etapas = $stmtEtapas->fetchAll(PDO::FETCH_ASSOC);
 
 <?php view('header', ['title' => 'Detalle de Postulación']) ?>
 
-<div class="container" style="max-width: 800px; margin: 0 auto; padding: 20px;">
-    
-    <h2>Detalle de Postulación: <?= htmlspecialchars($datos['numero_postulacion']) ?></h2>
-    <br>
-    
-    <h3>1. Datos Generales</h3>
-    <ul>
-        <li><strong>Estado Actual:</strong> <?= htmlspecialchars($datos['nombre_estado_postulacion']) ?></li>
-        <li><strong>Responsable Académico:</strong> <?= htmlspecialchars($datos['responsable_1']) ?></li>
-        <li><strong>Evaluador Asignado:</strong> <?= htmlspecialchars($datos['responsable_2'] ?? 'No asignado') ?></li>
-        <li><strong>Región de ejecución:</strong> <?= htmlspecialchars($datos['nombre_region_ejecucion']) ?></li>
-        <li><strong>Region de impacto:</strong> <?= htmlspecialchars($datos['nombre_region_impacto']) ?></li>
-        <li><strong>Sede USM:</strong> <?= htmlspecialchars($datos['nombre_sede']) ?></li>
-        <li><strong>Empresa:</strong> <?= htmlspecialchars($datos['nombre_empresa']) ?> (RUT: <?= htmlspecialchars($datos['rut_empresa']) ?>)</li>
-        <li><strong>Presupuesto:</strong> $<?= htmlspecialchars(number_format($datos['presupuesto'], 0, ',', '.')) ?></li>
-    </ul>
+<div class="container py-5">
+    <div class="card shadow-lg border-0 rounded-4">
+        <div class="card-body p-4 p-md-5">
+            
+            <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+                <h2 class="fw-bold mb-0">Detalle de Postulación: <span class="text-primary">#<?= htmlspecialchars($datos['numero_postulacion']) ?></span></h2>
+                <a href="home.php" class="btn btn-outline-secondary btn-sm">Volver al Inicio</a>
+            </div>
+            
+            <h4 class="text-secondary fw-bold mt-4 mb-3"><i class="bi bi-info-circle"></i> 1. Datos Generales</h4>
+            <div class="row g-3 bg-light p-4 rounded-3 mb-5">
+                <div class="col-md-6">
+                    <span class="d-block small fw-bold text-muted mb-1">Estado Actual:</span>
+                    <?php 
+                        $estado = $datos['nombre_estado_postulacion'];
+                        $clase_badge = '';
+                        if ($estado === 'Aprobada') {
+                            $clase_badge = 'bg-success';
+                        } elseif ($estado === 'Rechazada'){
+                            $clase_badge = 'bg-danger';
+                        } else {
+                            $clase_badge = 'bg-secondary';
+                        }
+                    ?>
+                    <span class="badge <?= $clase_badge ?> fs-6"><?= htmlspecialchars($estado) ?></span>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <span class="d-block small fw-bold text-muted mb-1">Presupuesto Solicitado:</span>
+                    <span class="fs-5 fw-bold text-success">$<?= htmlspecialchars(number_format($datos['presupuesto'], 0, ',', '.')) ?></span>
+                </div>
+                
+                <div class="col-md-4 mt-4">
+                    <span class="d-block small fw-bold text-muted">Responsable Académico:</span>
+                    <span class="text-dark"><?= htmlspecialchars($datos['responsable_1']) ?></span>
+                </div>
+                <div class="col-md-4 mt-4">
+                    <span class="d-block small fw-bold text-muted">Evaluador Asignado:</span>
+                    <span class="text-dark"><?= htmlspecialchars($datos['responsable_2'] ?? 'No asignado') ?></span>
+                </div>
+                <div class="col-md-4 mt-4">
+                    <span class="d-block small fw-bold text-muted">Empresa Vinculada:</span>
+                    <span class="text-dark"><?= htmlspecialchars($datos['nombre_empresa']) ?> (RUT: <?= htmlspecialchars($datos['rut_empresa']) ?>)</span>
+                </div>
 
-    <hr style="margin: 30px 0;">
+                <div class="col-md-4 mt-3">
+                    <span class="d-block small fw-bold text-muted">Sede USM:</span>
+                    <span class="text-dark"><?= htmlspecialchars($datos['nombre_sede']) ?></span>
+                </div>
+                <div class="col-md-4 mt-3">
+                    <span class="d-block small fw-bold text-muted">Región de Ejecución:</span>
+                    <span class="text-dark"><?= htmlspecialchars($datos['nombre_region_ejecucion']) ?></span>
+                </div>
+                <div class="col-md-4 mt-3">
+                    <span class="d-block small fw-bold text-muted">Región de Impacto:</span>
+                    <span class="text-dark"><?= htmlspecialchars($datos['nombre_region_impacto']) ?></span>
+                </div>
+            </div>
 
-    <h3>2. Datos de la Iniciativa</h3>
-    <div style="margin-bottom: 15px;">
-        <strong>Nombre de la Iniciativa:</strong>
-        <p><?= nl2br(htmlspecialchars($datos['nombre_iniciativa'] ?? 'No registrada')) ?></p>
+            <h4 class="text-secondary fw-bold mb-3"><i class="bi bi-file-text"></i> 2. Datos de la Iniciativa</h4>
+            <div class="row g-4 mb-5">
+                <div class="col-md-8">
+                    <span class="d-block small fw-bold text-muted">Nombre de la Iniciativa:</span>
+                    <p class="mb-0 fs-5 text-dark"><?= nl2br(htmlspecialchars($datos['nombre_iniciativa'] ?? 'No registrada')) ?></p>
+                </div>
+                <div class="col-md-4">
+                    <span class="d-block small fw-bold text-muted">Tipo de Iniciativa:</span>
+                    <p class="mb-0 text-dark"><?= nl2br(htmlspecialchars($datos['nombre_tipo_iniciativa'] ?? 'No registrada')) ?></p>
+                </div>
+                
+                <div class="col-12">
+                    <span class="d-block small fw-bold text-muted">Descripción del Problema:</span>
+                    <div class="p-3 bg-light border rounded-3 text-dark"><?= nl2br(htmlspecialchars($datos['descripcion'] ?? 'No registrada')) ?></div>
+                </div>
+
+                <div class="col-12">
+                    <span class="d-block small fw-bold text-muted">Propuesta de Solución:</span>
+                    <div class="p-3 bg-light border rounded-3 text-dark"><?= nl2br(htmlspecialchars($datos['solucion'] ?? 'No registrada')) ?></div>
+                </div>
+
+                <div class="col-md-6">
+                    <span class="d-block small fw-bold text-muted">Resultados Esperados:</span>
+                    <div class="p-3 bg-light border rounded-3 h-100 text-dark"><?= nl2br(htmlspecialchars($datos['resultados_esperados'] ?? 'No registrada')) ?></div>
+                </div>
+
+                <div class="col-md-6">
+                    <span class="d-block small fw-bold text-muted">Documentos Adicionales:</span>
+                    <div class="p-3 bg-light border rounded-3 h-100 text-dark"><?= nl2br(htmlspecialchars($datos['documentos'] ?? 'No registrada')) ?></div>
+                </div>
+            </div>
+
+            <h4 class="text-secondary fw-bold mb-3"><i class="bi bi-people"></i> 3. Equipo de Trabajo</h4>
+            <?php if (count($equipo) > 0): ?>
+                <div class="table-responsive mb-5">
+                    <table class="table table-bordered table-hover align-middle">
+                        <thead class="table-light text-center small text-muted text-uppercase">
+                            <tr>
+                                <th>Nombre Completo</th>
+                                <th>RUT</th>
+                                <th>Tipo</th>
+                                <th>Rol en Proyecto</th>
+                                <th>Email</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($equipo as $integrante): ?>
+                                <tr>
+                                    <td class="fw-bold text-secondary"><?= htmlspecialchars($integrante['nombre_integrante']) ?></td>
+                                    <td class="text-center"><?= htmlspecialchars($integrante['rut_integrante']) ?></td>
+                                    <td class="text-center"><span class="badge bg-secondary"><?= htmlspecialchars($integrante['nombre_tipo_persona']) ?></span></td>
+                                    <td><?= htmlspecialchars($integrante['rol_integrante']) ?></td>
+                                    <td><a <?= htmlspecialchars($integrante['email_integrante']) ?>><?= htmlspecialchars($integrante['email_integrante']) ?></a></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php else: ?>
+                <div class="alert alert-secondary text-center font-italic mb-5">No hay integrantes registrados en el equipo.</div>
+            <?php endif; ?>
+
+            <h4 class="text-secondary fw-bold mb-3"><i class="bi bi-calendar3"></i> 4. Cronograma de Etapas</h4>
+            <?php if (count($etapas) > 0): ?>
+                <div class="table-responsive mb-5">
+                    <table class="table table-bordered table-hover align-middle">
+                        <thead class="table-light text-center small text-muted text-uppercase">
+                            <tr>
+                                <th style="width: 30%;">Nombre de la Etapa</th>
+                                <th style="width: 15%;">Plazo (Semanas)</th>
+                                <th>Entregable Esperado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($etapas as $etapa): ?>
+                                <tr>
+                                    <td class="fw-bold text-secondary"><?= htmlspecialchars($etapa['nombre_etapa']) ?></td>
+                                    <td class="text-center"><?= htmlspecialchars($etapa['plazo']) ?></td>
+                                    <td><?= htmlspecialchars($etapa['entregable']) ?></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php else: ?>
+                <div class="alert alert-secondary text-center font-italic mb-5">No hay etapas registradas para el cronograma.</div>
+            <?php endif; ?>
+
+                <div>
+                    <?php if ($tipoUsuario == 1): ?>
+                        <a href="editar_postulacion.php?codigo=<?= urlencode($codigo) ?>" class="btn btn-primary fw-bold px-4">
+                            Editar Postulación
+                        </a>
+                    <?php endif; ?>
+
+                    <?php if ($tipoUsuario == 2 && $datos['responsable_2'] == $usuarioActual && $datos['id_estado_postulacion'] == 2): ?>
+                        <form method="POST" class="d-inline-block">
+                            <button type="submit" name="decision_evaluador" value="aceptar" class="btn btn-success fw-bold px-4 me-2">Aceptar Proyecto</button>
+                            <button type="submit" name="decision_evaluador" value="rechazar" class="btn btn-danger fw-bold px-4">Rechazar Proyecto</button>
+                        </form>
+                    <?php endif; ?>
+
+                    <?php if ($tipoUsuario == 3 && $datos['id_estado_postulacion'] == 1 && empty($datos['responsable_2'])): ?>
+                        <form method="POST" class="d-flex align-items-center gap-2">
+                            <select name="evaluador" class="form-select" required>
+                                <option value="">-- Seleccione Evaluador --</option>
+                                <?php foreach ($listaEvaluadores as $ev): ?>
+                                    <option value="<?= htmlspecialchars($ev['username']) ?>"><?= htmlspecialchars($ev['username']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <button type="submit" name="asignar_evaluador" class="btn btn-primary fw-bold px-4">Asignar</button>
+                        </form>
+                    <?php endif; ?>
+                </div>
+
+        </div>
     </div>
-    
-    <div style="margin-bottom: 15px;">
-        <strong>Descripción del Problema:</strong>
-        <p><?= nl2br(htmlspecialchars($datos['descripcion'] ?? 'No registrada')) ?></p>
-    </div>
-
-    <div style="margin-bottom: 15px;">
-        <strong>Propuesta de Solución:</strong>
-        <p><?= nl2br(htmlspecialchars($datos['solucion'] ?? 'No registrada')) ?></p>
-    </div>
-
-    <div style="margin-bottom: 15px;">
-        <strong>Resultados Esperados:</strong>
-        <p><?= nl2br(htmlspecialchars($datos['resultados_esperados'] ?? 'No registrada')) ?></p>
-    </div>
-
-    <div style="margin-bottom: 15px;">
-        <strong>Documentos Adicionales:</strong>
-        <p><?= nl2br(htmlspecialchars($datos['documentos'] ?? 'No registrada')) ?></p>
-    </div>
-
-    <div style="margin-bottom: 15px;">
-        <strong>Tipo de Iniciativa:</strong>
-        <p><?= nl2br(htmlspecialchars($datos['nombre_tipo_iniciativa'] ?? 'No registrada')) ?></p>
-    </div>
-
-    <hr style="margin: 30px 0;">
-
-    <!-- NUEVA SECCIÓN: EQUIPO -->
-    <h3>3. Equipo de Trabajo</h3>
-    <?php if (count($equipo) > 0): ?>
-        <table border="1" style="width: 100%; border-collapse: collapse; text-align: left; margin-bottom: 20px;">
-            <thead style="background-color: #f2f2f2;">
-                <tr>
-                    <th style="padding: 10px;">Nombre</th>
-                    <th style="padding: 10px;">RUT</th>
-                    <th style="padding: 10px;">Tipo</th>
-                    <th style="padding: 10px;">Rol en Proyecto</th>
-                    <th style="padding: 10px;">Email</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($equipo as $integrante): ?>
-                    <tr>
-                        <td style="padding: 10px;"><?= htmlspecialchars($integrante['nombre_integrante']) ?></td>
-                        <td style="padding: 10px;"><?= htmlspecialchars($integrante['rut_integrante']) ?></td>
-                        <td style="padding: 10px;"><?= htmlspecialchars($integrante['nombre_tipo_persona']) ?></td>
-                        <td style="padding: 10px;"><?= htmlspecialchars($integrante['rol_integrante']) ?></td>
-                        <td style="padding: 10px;"><?= htmlspecialchars($integrante['email_integrante']) ?></td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    <?php else: ?>
-        <p style="color: #666; font-style: italic;">No hay integrantes registrados en el equipo.</p>
-    <?php endif; ?>
-
-    <hr style="margin: 30px 0;">
-
-    <!-- NUEVA SECCIÓN: CRONOGRAMA -->
-    <h3>4. Cronograma de Etapas</h3>
-    <?php if (count($etapas) > 0): ?>
-        <table border="1" style="width: 100%; border-collapse: collapse; text-align: left; margin-bottom: 20px;">
-            <thead style="background-color: #f2f2f2;">
-                <tr>
-                    <th style="padding: 10px;">Nombre de la Etapa</th>
-                    <th style="padding: 10px; width: 15%;">Plazo (Días)</th>
-                    <th style="padding: 10px;">Entregable</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($etapas as $etapa): ?>
-                    <tr>
-                        <td style="padding: 10px;"><?= htmlspecialchars($etapa['nombre_etapa']) ?></td>
-                        <td style="padding: 10px;"><?= htmlspecialchars($etapa['plazo']) ?></td>
-                        <td style="padding: 10px;"><?= htmlspecialchars($etapa['entregable']) ?></td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    <?php else: ?>
-        <p style="color: #666; font-style: italic;">No hay etapas registradas para el cronograma.</p>
-    <?php endif; ?>
-
-    <br>
-
-     <!-- Acciones por rol -->
-    <div style="padding: 15px; margin-bottom: 20px; background-color: #f8f9fa; border-radius: 5px;">
-
-        <!-- Postulante: Botón de Edición -->
-        <?php if ($tipoUsuario == 1): ?>
-            <a href="editar_postulacion.php?codigo=<?= urlencode($codigo) ?>" style="padding: 10px 15px; background-color: #7952b3; color: white; text-decoration: none; border-radius: 4px; display: inline-block;">
-                Editar Detalles de Postulación
-            </a>
-        <?php endif; ?>
-
-        <!-- Evaluador: Botones de Aceptar/Rechazar -->
-        <?php if ($tipoUsuario == 2 && $datos['responsable_2'] == $usuarioActual && $datos['id_estado_postulacion'] == 2): ?>
-            <form method="POST" style="display: inline-block;">
-                <button type="submit" name="decision_evaluador" value="aceptar" style="background-color: #28a745; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer;">Aceptar Proyecto</button>
-                <button type="submit" name="decision_evaluador" value="rechazar" style="background-color: #dc3545; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer;">Rechazar Proyecto</button>
-            </form>
-        <?php endif; ?>
-
-        <!-- Administrador: Formulario de Asignación -->
-        <?php if ($tipoUsuario == 3 && $datos['id_estado_postulacion'] == 1 && empty($datos['responsable_2'])): ?>
-            <form method="POST" style="display: inline-block;">
-                <label style="font-weight: bold; margin-right: 10px;">Asignar Evaluador:</label>
-                <select name="evaluador" required style="padding: 8px; border-radius: 4px;">
-                    <option value="">-- Seleccione Evaluador --</option>
-                    <?php foreach ($listaEvaluadores as $ev): ?>
-                        <option value="<?= htmlspecialchars($ev['username']) ?>"><?= htmlspecialchars($ev['username']) ?></option>
-                    <?php endforeach; ?>
-                </select>
-                <button type="submit" name="asignar_evaluador" style="background-color: #7952b3; color: white; border: none; padding: 9px 15px; border-radius: 4px; cursor: pointer;">Asignar</button>
-            </form>
-        <?php endif; ?>
-
-    </div>
-    <br>
-    <a href="home.php" style="text-decoration: none;"> Volver</a>
-
 </div>
 
 <?php view('footer') ?>

@@ -10,11 +10,11 @@ if (!$codigo) {
     die("Error: No se especificó ninguna postulación a editar.");
 }
 
-$sql = "SELECT p.*, i.nombre_iniciativa, i.descripcion, i.solucion, i.resultados_esperados, i.documentos, i.id_tipo_iniciativa 
-        FROM postulacion p 
-        LEFT JOIN iniciativa i ON p.codigo_postulacion = i.codigo_postulacion
-        WHERE p.codigo_postulacion = :codigo 
-        AND (p.responsable_1 = :user OR p.responsable_2 = :user)";
+$sql = "SELECT postulacion.*, iniciativa.nombre_iniciativa, iniciativa.descripcion, iniciativa.solucion, iniciativa.resultados_esperados, iniciativa.documentos, iniciativa.id_tipo_iniciativa 
+        FROM postulacion 
+        LEFT JOIN iniciativa ON postulacion.codigo_postulacion = iniciativa.codigo_postulacion
+        WHERE postulacion.codigo_postulacion = :codigo 
+        AND (postulacion.responsable_1 = :user OR postulacion.responsable_2 = :user)";
 
 $stmt = db()->prepare($sql);
 $stmt->execute(['codigo' => $codigo, 'user' => $usuarioActual]);
@@ -123,9 +123,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
         }
 
-        //$sqlRevisarEquipo = "CALL VerificarRequisitoEquipo(:codigo)";
-        //$stmtRevisarEq = db()->prepare($sqlRevisarEquipo);
-        //$stmtRevisarEq->execute(['codigo' => $codigo]);
+        $sqlRevisarEquipo = "CALL VerificarRequisitoEquipo(:codigo)";
+        $stmtRevisarEq = db()->prepare($sqlRevisarEquipo);
+        $stmtRevisarEq->execute(['codigo' => $codigo]);
 
         $sqlRevisarCronograma = "CALL VerificarRequisitoCronograma(:codigo)";
         $stmtRevisarCr = db()->prepare($sqlRevisarCronograma);
@@ -173,201 +173,237 @@ $etapasActuales = $stmtEtapas->fetchAll(PDO::FETCH_ASSOC);
 
 <?php view('header', ['title' => 'Editar Postulación']) ?>
 
-<div class="container" style="max-width: 800px; margin: 0 auto; padding: 20px;">
-    <h2>Editando Postulación: <?= htmlspecialchars($codigo) ?></h2>
-    
-    <?php if (!empty($mensaje_error)): ?>
-        <div style="background-color: #f8d7da; color: #721c24; padding: 15px; border: 1px solid #f5c6cb; border-radius: 5px; margin-bottom: 20px;">
-            <strong>¡Atención!</strong> <?= htmlspecialchars($mensaje_error) ?>
-        </div>
-    <?php endif; ?>
-
-    <form method="POST" action="editar_postulacion.php?codigo=<?= urlencode($codigo) ?>">
-        
-        <h3>1. Datos Generales</h3>
-
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label style="display: block; font-weight: bold;">Empresa Externa Asignada:</label>
-            <select name="rut_empresa" style="width: 100%; padding: 8px;" required>
-                <option value="">-- Seleccione una Empresa --</option>
-                <?php foreach ($listaEmpresas as $empresa): ?>
-                    <option value="<?= htmlspecialchars($empresa['rut_empresa']) ?>" <?= ($empresa['rut_empresa'] === $datos_postulacion['rut_empresa']) ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($empresa['nombre_empresa']) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label style="display: block; font-weight: bold;">Sede USM Responsable:</label>
-            <select name="id_sede" style="width: 100%; padding: 8px;" required>
-                <option value="">-- Seleccione Sede --</option>
-                <?php foreach ($listaSedes as $sede): ?>
-                    <option value="<?= htmlspecialchars($sede['id_sede']) ?>" <?= ($sede['id_sede'] == $datos_postulacion['id_sede']) ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($sede['nombre_sede']) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label style="display: block; font-weight: bold;">Región de Ejecución:</label>
-            <select name="id_region_ejecucion" style="width: 100%; padding: 8px;" required>
-                <option value="">-- Seleccione Región --</option>
-                <?php foreach ($listaRegiones as $region): ?>
-                    <option value="<?= htmlspecialchars($region['id_region']) ?>" <?= ($region['id_region'] == $datos_postulacion['id_region_ejecucion']) ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($region['nombre_region']) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label style="display: block; font-weight: bold;">Región de Impacto:</label>
-            <select name="id_region_impacto" style="width: 100%; padding: 8px;" required>
-                <option value="">-- Seleccione Región --</option>
-                <?php foreach ($listaRegiones as $region): ?>
-                    <option value="<?= htmlspecialchars($region['id_region']) ?>" <?= ($region['id_region'] == $datos_postulacion['id_region_impacto']) ? 'selected' : '' ?>>
-                        <?= htmlspecialchars($region['nombre_region']) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label style="display: block; font-weight: bold;">Presupuesto Solicitado ($):</label>
-            <input type="number" name="presupuesto" style="width: 100%; padding: 8px;" value="<?= htmlspecialchars($datos_postulacion['presupuesto']) ?>" required>
-        </div>
-
-        <hr style="margin: 30px 0;">
-
-        <h3>2. Datos de la Iniciativa</h3>
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label style="display: block; font-weight: bold;">Nombre de la Iniciativa:</label>
-            <input type="text" name="nombre_iniciativa" style="width: 100%; padding: 8px;" value="<?= htmlspecialchars($datos_postulacion['nombre_iniciativa']) ?>" required>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label style="display: block; font-weight: bold;">Descripción del Problema:</label>
-            <textarea name="descripcion" rows="4" style="width: 100%; padding: 8px;" required><?= htmlspecialchars($datos_postulacion['descripcion']) ?></textarea>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label style="display: block; font-weight: bold;">Propuesta de Solución:</label>
-            <textarea name="solucion" rows="4" style="width: 100%; padding: 8px;" required><?= htmlspecialchars($datos_postulacion['solucion']) ?></textarea>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label style="display: block; font-weight: bold;">Resultados Esperados:</label>
-            <textarea name="resultados_esperados" rows="3" style="width: 100%; padding: 8px;" required><?= htmlspecialchars($datos_postulacion['resultados_esperados']) ?></textarea>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label style="display: block; font-weight: bold;">Documentos adicionales:</label>
-            <textarea name="documentos" rows="3" style="width: 100%; padding: 8px;" required><?= htmlspecialchars($datos_postulacion['documentos']) ?></textarea>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 25px;">
-            <label style="display: block; font-weight: bold;">Tipo de Iniciativa:</label>
-            <select name="id_tipo_iniciativa" style="width: 100%; padding: 8px;" required>
-                <option value="1" <?= ($datos_postulacion['id_tipo_iniciativa'] == 1) ? 'selected' : '' ?>>Nueva</option>
-                <option value="2" <?= ($datos_postulacion['id_tipo_iniciativa'] == 2) ? 'selected' : '' ?>>Existente</option>
-            </select>
-        </div>
-
-        <hr style="margin: 30px 0;">
-
-        <h3>3. Equipo de Trabajo</h3>
-        <p style="font-size: 0.9em; color: #555;">Agregue a los profesores y alumnos del proyecto (mínimo 3 profesores y 5 alumnos).</p>
-
-        <div id="contenedor-equipo">
-            <?php foreach($equipoActual as $int): ?>
-                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
-                    <input type="text" name="rut_integrante[]" value="<?= htmlspecialchars($int['rut_integrante']) ?>" placeholder="RUT (ej: 12345678-9)" style="flex: 1 1 150px; padding: 8px;" required>
-                    <input type="text" name="nombre_integrante[]" value="<?= htmlspecialchars($int['nombre_integrante']) ?>" placeholder="Nombre completo" style="flex: 1 1 220px; padding: 8px;" required>
-                    <input type="text" name="depto_integrante[]" value="<?= htmlspecialchars($int['depto_integrante']) ?>" placeholder="Departamento" style="flex: 1 1 180px; padding: 8px;" required>
-                    <input type="email" name="email_integrante[]" value="<?= htmlspecialchars($int['email_integrante']) ?>" placeholder="Correo institucional" style="flex: 1 1 220px; padding: 8px;" required>
-                    <input type="number" name="telefono_integrante[]" value="<?= htmlspecialchars($int['telefono_integrante']) ?>" placeholder="Teléfono" style="flex: 1 1 130px; padding: 8px;" required>
-                    <select name="id_sede_integrante[]" style="flex: 1 1 220px; padding: 8px;" required>
-                        <option value="">Seleccione sede...</option>
-                        <option value="1" <?= ($int['id_sede'] == 1) ? 'selected' : '' ?>>Campus Casa Central Valparaíso</option>
-                        <option value="2" <?= ($int['id_sede'] == 2) ? 'selected' : '' ?>>Campus San Joaquín</option>
-                        <option value="3" <?= ($int['id_sede'] == 3) ? 'selected' : '' ?>>Campus Vitacura</option>
-                        <option value="4" <?= ($int['id_sede'] == 4) ? 'selected' : '' ?>>Sede Viña del Mar</option>
-                        <option value="5" <?= ($int['id_sede'] == 5) ? 'selected' : '' ?>>Sede Concepción</option>
-                    </select>
-                    <select name="tipo_integrante[]" style="flex: 1 1 150px; padding: 8px;" required>
-                        <option value="">Tipo de persona...</option>
-                        <option value="1" <?= ($int['id_tipo_persona'] == 1) ? 'selected' : '' ?>>Profesor</option>
-                        <option value="2" <?= ($int['id_tipo_persona'] == 2) ? 'selected' : '' ?>>Estudiante</option>
-                    </select>
-                    <input type="text" name="rol_integrante[]" value="<?= htmlspecialchars($int['rol_integrante']) ?>" placeholder="Rol en el proyecto" style="flex: 1 1 180px; padding: 8px;" required>
-                    <button type="button" onclick="this.parentElement.remove()" style="background-color: #dc3545; color: white; border: none; padding: 8px; cursor: pointer; border-radius: 4px;">X</button>
+<div class="container py-5">
+    <div class="card shadow-lg border-0 rounded-4">
+        <div class="card-body p-4 p-md-5">
+            
+            <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+                <h2 class="fw-bold mb-0">Editando Postulación: <span class="text-primary">#<?= htmlspecialchars($datos_postulacion['numero_postulacion']) ?></span></h2>
+            </div>
+            
+            <?php if (!empty($mensaje_error)): ?>
+                <div class="alert alert-danger d-flex align-items-center" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <div>
+                        <strong>¡Atención!</strong> <?= htmlspecialchars($mensaje_error) ?>
+                    </div>
                 </div>
-            <?php endforeach; ?>
-        </div>
+            <?php endif; ?>
 
-        <button type="button" id="btn-agregar-integrante" style="padding: 8px 15px; background-color: #28a745; color: white; border: none; cursor: pointer; border-radius: 4px; margin-bottom: 20px;">
-            + Agregar Integrante
-        </button>
+            <form method="POST" action="editar_postulacion.php?codigo=<?= urlencode($codigo) ?>">
+                
+                <h4 class="text-secondary fw-bold mt-4 mb-3"><i class="bi bi-building"></i> 1. Datos Generales</h4>
+                <div class="row g-3 bg-light p-3 rounded-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-muted">Empresa Externa Asignada:</label>
+                        <select name="rut_empresa" class="form-select" required>
+                            <option value="">-- Seleccione una Empresa --</option>
+                            <?php foreach ($listaEmpresas as $empresa): ?>
+                                <option value="<?= htmlspecialchars($empresa['rut_empresa']) ?>" <?= ($empresa['rut_empresa'] === $datos_postulacion['rut_empresa']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($empresa['nombre_empresa']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
 
-        <hr style="margin: 30px 0;">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-muted">Sede USM Responsable:</label>
+                        <select name="id_sede" class="form-select" required>
+                            <option value="">-- Seleccione Sede --</option>
+                            <?php foreach ($listaSedes as $sede): ?>
+                                <option value="<?= htmlspecialchars($sede['id_sede']) ?>" <?= ($sede['id_sede'] == $datos_postulacion['id_sede']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($sede['nombre_sede']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
 
-        <h3>4. Cronograma de Etapas</h3>
-        <p style="font-size: 0.9em; color: #555;">Defina las etapas, plazos y entregables de su proyecto (Su cronograma completo no puede superar las 36 semanas).</p>
-        
-        <div id="contenedor-etapas">
-            <?php foreach($etapasActuales as $et): ?>
-                <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
-                    <input type="text" name="nombre_etapa[]" value="<?= htmlspecialchars($et['nombre_etapa']) ?>" placeholder="Nombre de la etapa" style="flex: 1 1 250px; padding: 8px;" required>
-                    <input type="number" name="plazo_etapa[]" value="<?= htmlspecialchars($et['plazo']) ?>" placeholder="Plazo (semanas)" style="flex: 1 1 100px; padding: 8px;" required>
-                    <input type="text" name="entregable_etapa[]" value="<?= htmlspecialchars($et['entregable']) ?>" placeholder="Entregable esperado" style="flex: 1 1 300px; padding: 8px;" required>
-                    <button type="button" onclick="this.parentElement.remove()" style="background-color: #dc3545; color: white; border: none; padding: 8px; cursor: pointer; border-radius: 4px;">X</button>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small text-muted">Región de Ejecución:</label>
+                        <select name="id_region_ejecucion" class="form-select" required>
+                            <option value="">-- Seleccione Región --</option>
+                            <?php foreach ($listaRegiones as $region): ?>
+                                <option value="<?= htmlspecialchars($region['id_region']) ?>" <?= ($region['id_region'] == $datos_postulacion['id_region_ejecucion']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($region['nombre_region']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small text-muted">Región de Impacto:</label>
+                        <select name="id_region_impacto" class="form-select" required>
+                            <option value="">-- Seleccione Región --</option>
+                            <?php foreach ($listaRegiones as $region): ?>
+                                <option value="<?= htmlspecialchars($region['id_region']) ?>" <?= ($region['id_region'] == $datos_postulacion['id_region_impacto']) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($region['nombre_region']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small text-muted">Presupuesto Solicitado ($):</label>
+                        <input type="number" name="presupuesto" class="form-control" value="<?= htmlspecialchars($datos_postulacion['presupuesto']) ?>" required>
+                    </div>
                 </div>
-            <?php endforeach; ?>
+
+                <h4 class="text-secondary fw-bold mt-5 mb-3"><i class="bi bi-file-text"></i> 2. Datos de la Iniciativa</h4>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-9">
+                        <label class="form-label fw-bold small text-muted">Nombre de la Iniciativa:</label>
+                        <input type="text" name="nombre_iniciativa" class="form-control" value="<?= htmlspecialchars($datos_postulacion['nombre_iniciativa']) ?>" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small text-muted">Tipo de Iniciativa:</label>
+                        <select name="id_tipo_iniciativa" class="form-select" required>
+                            <option value="1" <?= ($datos_postulacion['id_tipo_iniciativa'] == 1) ? 'selected' : '' ?>>Nueva</option>
+                            <option value="2" <?= ($datos_postulacion['id_tipo_iniciativa'] == 2) ? 'selected' : '' ?>>Existente</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-muted">Descripción del Problema:</label>
+                        <textarea name="descripcion" class="form-control" rows="4" required><?= htmlspecialchars($datos_postulacion['descripcion']) ?></textarea>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-muted">Propuesta de Solución:</label>
+                        <textarea name="solucion" class="form-control" rows="4" required><?= htmlspecialchars($datos_postulacion['solucion']) ?></textarea>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-muted">Resultados Esperados:</label>
+                        <textarea name="resultados_esperados" class="form-control" rows="3" required><?= htmlspecialchars($datos_postulacion['resultados_esperados']) ?></textarea>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-muted">Documentos adicionales:</label>
+                        <textarea name="documentos" class="form-control" rows="3" required><?= htmlspecialchars($datos_postulacion['documentos']) ?></textarea>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-5 mb-3">
+                    <h4 class="text-secondary fw-bold mb-0"><i class="bi bi-people"></i> 3. Equipo de Trabajo</h4>
+                    <button type="button" id="btn-agregar-integrante" class="btn btn-success btn-sm fw-bold">
+                        + Agregar Integrante
+                    </button>
+                </div>
+                <p class="text-muted small mb-3">Agregue a los profesores y alumnos del proyecto (mínimo 3 profesores y 5 alumnos).</p>
+
+                <div id="contenedor-equipo">
+                    <?php foreach($equipoActual as $int): ?>
+                        <div class="row g-2 mb-3 align-items-end bg-light border p-3 rounded-3 position-relative">
+                            <div class="col-md-2">
+                                <input type="text" name="rut_integrante[]" class="form-control form-control-sm" value="<?= htmlspecialchars($int['rut_integrante']) ?>" placeholder="RUT (ej: 12345678-9)" required>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" name="nombre_integrante[]" class="form-control form-control-sm" value="<?= htmlspecialchars($int['nombre_integrante']) ?>" placeholder="Nombre completo" required>
+                            </div>
+                            <div class="col-md-3">
+                                <input type="text" name="depto_integrante[]" class="form-control form-control-sm" value="<?= htmlspecialchars($int['depto_integrante']) ?>" placeholder="Departamento" required>
+                            </div>
+                            <div class="col-md-4">
+                                <input type="email" name="email_integrante[]" class="form-control form-control-sm" value="<?= htmlspecialchars($int['email_integrante']) ?>" placeholder="Correo electrónico" required>
+                            </div>
+                            <div class="col-md-2">
+                                <input type="number" name="telefono_integrante[]" class="form-control form-control-sm" value="<?= htmlspecialchars($int['telefono_integrante']) ?>" placeholder="Teléfono" required>
+                            </div>
+                            <div class="col-md-3">
+                                <select name="id_sede_integrante[]" class="form-select form-select-sm" required>
+                                    <option value="">Sede...</option>
+                                    <option value="1" <?= ($int['id_sede'] == 1) ? 'selected' : '' ?>>Casa Central Valparaíso</option>
+                                    <option value="2" <?= ($int['id_sede'] == 2) ? 'selected' : '' ?>>Campus San Joaquín</option>
+                                    <option value="3" <?= ($int['id_sede'] == 3) ? 'selected' : '' ?>>Campus Vitacura</option>
+                                    <option value="4" <?= ($int['id_sede'] == 4) ? 'selected' : '' ?>>Sede Viña del Mar</option>
+                                    <option value="5" <?= ($int['id_sede'] == 5) ? 'selected' : '' ?>>Sede Concepción</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <select name="tipo_integrante[]" class="form-select form-select-sm" required>
+                                    <option value="">Tipo...</option>
+                                    <option value="1" <?= ($int['id_tipo_persona'] == 1) ? 'selected' : '' ?>>Profesor</option>
+                                    <option value="2" <?= ($int['id_tipo_persona'] == 2) ? 'selected' : '' ?>>Estudiante</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <input type="text" name="rol_integrante[]" class="form-control form-control-sm" value="<?= htmlspecialchars($int['rol_integrante']) ?>" placeholder="Rol en el proyecto" required>
+                            </div>
+                            <div class="col-md-1 text-end">
+                                <button type="button" onclick="this.closest('.row').remove()" class="btn btn-danger btn-sm w-100" title="Eliminar Integrante">X</button>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-5 mb-3">
+                    <h4 class="text-secondary fw-bold mb-0"><i class="bi bi-calendar3"></i> 4. Cronograma de Etapas</h4>
+                    <button type="button" id="btn-agregar-etapa" class="btn btn-success btn-sm fw-bold">
+                        + Agregar Etapa
+                    </button>
+                </div>
+                <p class="text-muted small mb-3">Defina las etapas, plazos y entregables de su proyecto (Su cronograma completo no puede superar las 36 semanas).</p>
+                
+                <div id="contenedor-etapas">
+                    <?php foreach($etapasActuales as $et): ?>
+                        <div class="row g-2 mb-2 align-items-center">
+                            <div class="col-md-4">
+                                <input type="text" name="nombre_etapa[]" class="form-control form-control-sm" value="<?= htmlspecialchars($et['nombre_etapa']) ?>" placeholder="Nombre de la etapa" required>
+                            </div>
+                            <div class="col-md-2">
+                                <input type="number" name="plazo_etapa[]" class="form-control form-control-sm" value="<?= htmlspecialchars($et['plazo']) ?>" placeholder="Semanas" required>
+                            </div>
+                            <div class="col-md-5">
+                                <input type="text" name="entregable_etapa[]" class="form-control form-control-sm" value="<?= htmlspecialchars($et['entregable']) ?>" placeholder="Entregable esperado" required>
+                            </div>
+                            <div class="col-md-1 text-end">
+                                <button type="button" onclick="this.closest('.row').remove()" class="btn btn-danger btn-sm w-100">X</button>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <div class="mt-5 d-flex gap-3 pt-3 border-top">
+                    <button type="submit" class="btn btn-primary btn-lg px-5 fw-bold">Guardar Cambios</button>
+                    <a href="detalle_postulacion.php?codigo=<?= urlencode($codigo) ?>" class="btn btn-outline-danger btn-lg px-4">Cancelar</a>
+                </div>
+            </form>
         </div>
-
-        <button type="button" id="btn-agregar-etapa" style="padding: 8px 15px; background-color: #28a745; color: white; border: none; cursor: pointer; border-radius: 4px; margin-bottom: 30px;">
-            + Agregar Etapa
-        </button>
-        <br>
-
-        <button type="submit" style="padding: 10px 20px; background-color: #7952b3; color: white; border: none; cursor: pointer;">Guardar Cambios</button>
-        <a href="detalle_postulacion.php?codigo=<?= urlencode($codigo) ?>" style="margin-left: 15px; text-decoration: none; color: #dc3545;">Cancelar</a>
-    </form>
+    </div>
 </div>
 
 <script>
+// El código JS se adaptó para generar exactamente las mismas clases de Bootstrap que usamos arriba
 document.getElementById('btn-agregar-integrante').addEventListener('click', function() {
     var container = document.getElementById('contenedor-equipo');
     var row = document.createElement('div');
-    
-    row.style.display = 'flex';
-    row.style.flexWrap = 'wrap';
-    row.style.gap = '10px';
-    row.style.marginBottom = '10px';
+    row.className = 'row g-2 mb-3 align-items-end bg-light border p-3 rounded-3';
     
     row.innerHTML = `
-        <input type="text" name="rut_integrante[]" placeholder="RUT (ej: 12345678-9)" style="flex: 1 1 150px; padding: 8px;" required>
-        <input type="text" name="nombre_integrante[]" placeholder="Nombre completo" style="flex: 1 1 220px; padding: 8px;" required>
-        <input type="text" name="depto_integrante[]" placeholder="Departamento" style="flex: 1 1 180px; padding: 8px;" required>
-        <input type="email" name="email_integrante[]" placeholder="Correo institucional" style="flex: 1 1 220px; padding: 8px;" required>
-        <input type="number" name="telefono_integrante[]" placeholder="Teléfono" style="flex: 1 1 130px; padding: 8px;" required>
-        <select name="id_sede_integrante[]" style="flex: 1 1 220px; padding: 8px;" required>
-            <option value="">Seleccione sede...</option>
-            <option value="1">Campus Casa Central Valparaíso</option>
-            <option value="2">Campus San Joaquín</option>
-            <option value="3">Campus Vitacura</option>
-            <option value="4">Sede Viña del Mar</option>
-            <option value="5">Sede Concepción</option>
-        </select>
-        <select name="tipo_integrante[]" style="flex: 1 1 150px; padding: 8px;" required>
-            <option value="">Tipo de persona...</option>
-            <option value="1">Profesor</option>
-            <option value="2">Estudiante</option>
-        </select>
-        <input type="text" name="rol_integrante[]" placeholder="Rol en el proyecto" style="flex: 1 1 180px; padding: 8px;" required>
-        <button type="button" onclick="this.parentElement.remove()" style="background-color: #dc3545; color: white; border: none; padding: 8px; cursor: pointer; border-radius: 4px;">X</button>
+        <div class="col-md-2"><input type="text" name="rut_integrante[]" class="form-control form-control-sm" placeholder="RUT (ej: 12345678-9)" required></div>
+        <div class="col-md-3"><input type="text" name="nombre_integrante[]" class="form-control form-control-sm" placeholder="Nombre completo" required></div>
+        <div class="col-md-3"><input type="text" name="depto_integrante[]" class="form-control form-control-sm" placeholder="Departamento" required></div>
+        <div class="col-md-4"><input type="email" name="email_integrante[]" class="form-control form-control-sm" placeholder="Correo electrónico" required></div>
+        <div class="col-md-2"><input type="number" name="telefono_integrante[]" class="form-control form-control-sm" placeholder="Teléfono" required></div>
+        <div class="col-md-3">
+            <select name="id_sede_integrante[]" class="form-select form-select-sm" required>
+                <option value="">Sede...</option>
+                <option value="1">Casa Central Valparaíso</option>
+                <option value="2">Campus San Joaquín</option>
+                <option value="3">Campus Vitacura</option>
+                <option value="4">Sede Viña del Mar</option>
+                <option value="5">Sede Concepción</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="tipo_integrante[]" class="form-select form-select-sm" required>
+                <option value="">Tipo...</option>
+                <option value="1">Profesor</option>
+                <option value="2">Estudiante</option>
+            </select>
+        </div>
+        <div class="col-md-4"><input type="text" name="rol_integrante[]" class="form-control form-control-sm" placeholder="Rol en el proyecto" required></div>
+        <div class="col-md-1 text-end"><button type="button" onclick="this.closest('.row').remove()" class="btn btn-danger btn-sm w-100">X</button></div>
     `;
     container.appendChild(row);
 });
@@ -375,17 +411,13 @@ document.getElementById('btn-agregar-integrante').addEventListener('click', func
 document.getElementById('btn-agregar-etapa').addEventListener('click', function() {
     var container = document.getElementById('contenedor-etapas');
     var row = document.createElement('div');
-    
-    row.style.display = 'flex';
-    row.style.flexWrap = 'wrap';
-    row.style.gap = '10px';
-    row.style.marginBottom = '10px';
+    row.className = 'row g-2 mb-2 align-items-center';
     
     row.innerHTML = `
-        <input type="text" name="nombre_etapa[]" placeholder="Nombre de la etapa" style="flex: 1 1 250px; padding: 8px;" required>
-        <input type="number" name="plazo_etapa[]" placeholder="Plazo (semanas)" style="flex: 1 1 100px; padding: 8px;" required>
-        <input type="text" name="entregable_etapa[]" placeholder="Entregable esperado" style="flex: 1 1 300px; padding: 8px;" required>
-        <button type="button" onclick="this.parentElement.remove()" style="background-color: #dc3545; color: white; border: none; padding: 8px; cursor: pointer; border-radius: 4px;">X</button>
+        <div class="col-md-4"><input type="text" name="nombre_etapa[]" class="form-control form-control-sm" placeholder="Nombre de la etapa" required></div>
+        <div class="col-md-2"><input type="number" name="plazo_etapa[]" class="form-control form-control-sm" placeholder="Semanas" required></div>
+        <div class="col-md-5"><input type="text" name="entregable_etapa[]" class="form-control form-control-sm" placeholder="Entregable esperado" required></div>
+        <div class="col-md-1 text-end"><button type="button" onclick="this.closest('.row').remove()" class="btn btn-danger btn-sm w-100">X</button></div>
     `;
     container.appendChild(row);
 });

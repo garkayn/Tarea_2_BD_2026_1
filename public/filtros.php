@@ -8,6 +8,7 @@ $tipoUsuario = $_SESSION['id_rol'] ?? null;
 
 $condiciones = [];
 $parametros = [];
+$joins_extra = "";
 
 if ($tipoUsuario != 3) {
     $condiciones[] = "(responsable_1 = :user1 OR responsable_2 = :user2)";
@@ -15,9 +16,14 @@ if ($tipoUsuario != 3) {
     $parametros['user2'] = $usuarioActual;
 }
 
-if (!empty($_GET['region'])) {
-    $condiciones[] = "nombre_region_ejecucion = :region";
-    $parametros['region'] = $_GET['region'];
+if (!empty($_GET['id_region_ejecucion'])) {
+    $condiciones[] = "id_region_ejecucion = :id_ejec";
+    $parametros['id_ejec'] = $_GET['id_region_ejecucion'];
+}
+
+if (!empty($_GET['id_region_impacto'])) {
+    $condiciones[] = "id_region_impacto = :id_imp";
+    $parametros['id_imp'] = $_GET['id_region_impacto'];
 }
 
 if (!empty($_GET['sede'])) {
@@ -40,7 +46,6 @@ if (!empty($_GET['responsable_2'])) {
     $parametros['evaluador'] = $_GET['responsable_2'];
 }
 
-$joins_extra = "";
 if (!empty($_GET['tamanio']) || !empty($_GET['convenio_usm'])) {
     $joins_extra = " LEFT JOIN empresa ON VistaMisPostulaciones.rut_empresa = empresa.rut_empresa 
                      LEFT JOIN tamanio_empresa ON empresa.id_tamanio = tamanio_empresa.id_tamanio 
@@ -55,6 +60,16 @@ if (!empty($_GET['tamanio']) || !empty($_GET['convenio_usm'])) {
         $condiciones[] = "convenio_usm.convenio_usm = :convenio";
         $parametros['convenio'] = $_GET['convenio_usm'];
     }
+}
+
+if (!empty($_GET['buscar'])) {
+    $condiciones[] = "(
+        numero_postulacion LIKE :buscar OR 
+        nombre_iniciativa LIKE :buscar OR 
+        nombre_empresa LIKE :buscar
+    )";
+    
+    $parametros['buscar'] = '%' . $_GET['buscar'] . '%';
 }
 
 $sql = "SELECT VistaMisPostulaciones.* FROM VistaMisPostulaciones " . $joins_extra;

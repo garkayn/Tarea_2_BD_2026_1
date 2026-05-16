@@ -37,7 +37,7 @@ CREATE TABLE convenio_usm (
 
 CREATE TABLE etapa (
     cod_etapa INT AUTO_INCREMENT PRIMARY KEY,
-    nombre_etapa VARCHAR(25) NOT NULL,
+    nombre_etapa VARCHAR(255) NOT NULL,
     plazo INT NOT NULL,
     entregable VARCHAR(255) NOT NULL
 ) ENGINE = InnoDB;

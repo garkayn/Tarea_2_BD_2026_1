@@ -163,9 +163,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         // Llamadas a los procedimientos almacenados
-        //$sqlRevisarEquipo = "CALL VerificarRequisitoEquipo(:codigo)";
-        //$stmtRevisarEq = db()->prepare($sqlRevisarEquipo);
-        //$stmtRevisarEq->execute(['codigo' => $codigoGenerado]);
+        $sqlRevisarEquipo = "CALL VerificarRequisitoEquipo(:codigo)";
+        $stmtRevisarEq = db()->prepare($sqlRevisarEquipo);
+        $stmtRevisarEq->execute(['codigo' => $codigoGenerado]);
 
         $sqlRevisarCronograma = "CALL VerificarRequisitoCronograma(:codigo)";
         $stmtRevisarCr = db()->prepare($sqlRevisarCronograma);
@@ -210,394 +210,291 @@ $listaSedes = $stmtSedes->fetchAll(PDO::FETCH_ASSOC);
 
 <?php view('header', ['title' => 'Crear Nueva Postulación']) ?>
 
-<div class="container" style="max-width: 800px; margin: 0 auto; padding: 20px;">
-    <h2>Registrar Nueva Postulación</h2>
-    <p>Complete los siguientes datos.</p>
-    
-    <?php if (!empty($mensaje_error)): ?>
-        <div style="background-color: #f8d7da; color: #721c24; padding: 15px; border: 1px solid #f5c6cb; border-radius: 5px; margin-bottom: 20px;">
-            <strong>¡Atención!</strong> <?php echo htmlspecialchars($mensaje_error); ?>
+<div class="container py-5">
+    <div class="card shadow-lg border-0 rounded-4">
+        <div class="card-body p-4 p-md-5">
+            
+            <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+                <div>
+                    <h2 class="fw-bold mb-0">Registrar Nueva Postulación</h2>
+                </div>
+                <button type="button" id="btn-datos-prueba" class="btn btn-sm btn-outline-primary fw-bold" title="Rellenar formulario para pruebas">
+                    <i class="bi bi-magic"></i> Rellenar Datos de Prueba
+                </button>
+            </div>
+            
+            <?php if (!empty($mensaje_error)): ?>
+                <div class="alert alert-danger d-flex align-items-center" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <div>
+                        <strong>¡Atención!</strong> <?= htmlspecialchars($mensaje_error) ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <form method="POST" action="crear_postulacion.php">
+                
+                <h4 class="text-secondary fw-bold mt-4 mb-3"><i class="bi bi-building"></i> 1. Datos Generales</h4>
+                <div class="row g-3 bg-light p-3 rounded-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-muted">Empresa Externa Asignada:</label>
+                        <select name="rut_empresa" class="form-select" required>
+                            <option value="">-- Seleccione una Empresa --</option>
+                            <?php foreach ($listaEmpresas as $empresa): ?>
+                                <option value="<?= htmlspecialchars($empresa['rut_empresa']) ?>">
+                                    <?= htmlspecialchars($empresa['nombre_empresa']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-muted">Sede USM Responsable:</label>
+                        <select name="id_sede" class="form-select" required>
+                            <option value="">-- Seleccione Sede --</option>
+                            <?php foreach ($listaSedes as $sede): ?>
+                                <option value="<?= htmlspecialchars($sede['id_sede']) ?>">
+                                    <?= htmlspecialchars($sede['nombre_sede']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small text-muted">Región de Ejecución:</label>
+                        <select name="id_region_ejecucion" class="form-select" required>
+                            <option value="">-- Seleccione Región --</option>
+                            <?php foreach ($listaRegiones as $region): ?>
+                                <option value="<?= htmlspecialchars($region['id_region']) ?>">
+                                    <?= htmlspecialchars($region['nombre_region']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small text-muted">Región de Impacto:</label>
+                        <select name="id_region_impacto" class="form-select" required>
+                            <option value="">-- Seleccione Región --</option>
+                            <?php foreach ($listaRegiones as $region): ?>
+                                <option value="<?= htmlspecialchars($region['id_region']) ?>">
+                                    <?= htmlspecialchars($region['nombre_region']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold small text-muted">Presupuesto Solicitado ($):</label>
+                        <input type="number" name="presupuesto" class="form-control" placeholder="Ej: 1500000" required>
+                    </div>
+                </div>
+
+                <h4 class="text-secondary fw-bold mt-5 mb-3"><i class="bi bi-file-text"></i> 2. Datos de la Iniciativa</h4>
+                <div class="row g-3 mb-4">
+                    <div class="col-md-9">
+                        <label class="form-label fw-bold small text-muted">Nombre de la Iniciativa:</label>
+                        <input type="text" name="nombre_iniciativa" class="form-control" placeholder="Título del proyecto" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small text-muted">Tipo de Iniciativa:</label>
+                        <select name="id_tipo_iniciativa" class="form-select" required>
+                            <option value="1">Nueva</option>
+                            <option value="2">Existente</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-muted">Descripción del Problema:</label>
+                        <textarea name="descripcion" class="form-control" rows="4" placeholder="Describa el problema a resolver..." required></textarea>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-muted">Propuesta de Solución:</label>
+                        <textarea name="solucion" class="form-control" rows="4" placeholder="Describa cómo solucionará el problema..." required></textarea>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-muted">Resultados Esperados:</label>
+                        <textarea name="resultados_esperados" class="form-control" rows="3" placeholder="¿Qué espera lograr?" required></textarea>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-muted">Documentos adicionales:</label>
+                        <textarea name="documentos" class="form-control" rows="3" placeholder="Indique qué documentos adjunta..." required></textarea>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-5 mb-3">
+                    <h4 class="text-secondary fw-bold mb-0"><i class="bi bi-people"></i> 3. Equipo de Trabajo</h4>
+                    <button type="button" id="btn-agregar-integrante" class="btn btn-success btn-sm fw-bold">
+                        + Agregar Integrante
+                    </button>
+                </div>
+                <p class="text-muted small mb-3">Agregue a los profesores y alumnos del proyecto (mínimo 3 profesores y 5 alumnos).</p>
+
+                <div id="contenedor-equipo"></div>
+
+                <div class="d-flex justify-content-between align-items-center mt-5 mb-3">
+                    <h4 class="text-secondary fw-bold mb-0"><i class="bi bi-calendar3"></i> 4. Cronograma de Etapas</h4>
+                    <button type="button" id="btn-agregar-etapa" class="btn btn-success btn-sm fw-bold">
+                        + Agregar Etapa
+                    </button>
+                </div>
+                <p class="text-muted small mb-3">Defina las etapas, plazos y entregables de su proyecto (Su cronograma completo no puede superar las 36 semanas).</p>
+                
+                <div id="contenedor-etapas"></div>
+
+                <div class="mt-5 d-flex gap-3 pt-3 border-top">
+                    <button type="submit" class="btn btn-primary btn-lg px-5 fw-bold">Guardar y Enviar Postulación</button>
+                    <a href="home.php" class="btn btn-outline-danger btn-lg px-4">Cancelar</a>
+                </div>
+            </form>
         </div>
-    <?php endif; ?>
-
-    <form method="POST" action="crear_postulacion.php">
-        
-        <h3>1. Datos Generales</h3>
-
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label style="display: block; font-weight: bold;">Empresa Externa Asignada:</label>
-            <select name="rut_empresa" style="width: 100%; padding: 8px;" required>
-                <option value="">-- Seleccione una Empresa --</option>
-                <?php foreach ($listaEmpresas as $empresa): ?>
-                    <option value="<?= htmlspecialchars($empresa['rut_empresa']) ?>">
-                        <?= htmlspecialchars($empresa['nombre_empresa']) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label style="display: block; font-weight: bold;">Sede USM Responsable:</label>
-            <select name="id_sede" style="width: 100%; padding: 8px;" required>
-                <option value="">-- Seleccione Sede --</option>
-                <?php foreach ($listaSedes as $sede): ?>
-                    <option value="<?= htmlspecialchars($sede['id_sede']) ?>">
-                        <?= htmlspecialchars($sede['nombre_sede']) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label style="display: block; font-weight: bold;">Región de Ejecución:</label>
-            <select name="id_region_ejecucion" style="width: 100%; padding: 8px;" required>
-                <option value="">-- Seleccione Región --</option>
-                <?php foreach ($listaRegiones as $region): ?>
-                    <option value="<?= htmlspecialchars($region['id_region']) ?>">
-                        <?= htmlspecialchars($region['nombre_region']) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label style="display: block; font-weight: bold;">Región de Impacto:</label>
-            <select name="id_region_impacto" style="width: 100%; padding: 8px;" required>
-                <option value="">-- Seleccione Región --</option>
-                <?php foreach ($listaRegiones as $region): ?>
-                    <option value="<?= htmlspecialchars($region['id_region']) ?>">
-                        <?= htmlspecialchars($region['nombre_region']) ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label style="display: block; font-weight: bold;">Presupuesto Solicitado ($):</label>
-            <input type="number" name="presupuesto" style="width: 100%; padding: 8px;" required>
-        </div>
-
-        <hr style="margin: 30px 0;">
-
-        <h3>2. Datos de la Iniciativa</h3>
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label style="display: block; font-weight: bold;">Nombre de la Iniciativa:</label>
-            <input type="text" name="nombre_iniciativa" style="width: 100%; padding: 8px;" required>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label style="display: block; font-weight: bold;">Descripción del Problema:</label>
-            <textarea name="descripcion" rows="4" style="width: 100%; padding: 8px;" required></textarea>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label style="display: block; font-weight: bold;">Propuesta de Solución:</label>
-            <textarea name="solucion" rows="4" style="width: 100%; padding: 8px;" required></textarea>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label style="display: block; font-weight: bold;">Resultados Esperados:</label>
-            <textarea name="resultados_esperados" rows="3" style="width: 100%; padding: 8px;" required></textarea>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 15px;">
-            <label style="display: block; font-weight: bold;">Documentos adicionales:</label>
-            <textarea name="documentos" rows="3" style="width: 100%; padding: 8px;" required></textarea>
-        </div>
-
-        <div class="form-group" style="margin-bottom: 25px;">
-            <label style="display: block; font-weight: bold;">Tipo de Iniciativa:</label>
-            <select name="id_tipo_iniciativa" style="width: 100%; padding: 8px;">
-                <option value="1">Nueva</option>
-                <option value="2">Existente</option>
-            </select>
-        </div>
-
-        <hr style="margin: 30px 0;">
-
-        <h3>3. Equipo de Trabajo</h3>
-        <p style="font-size: 0.9em; color: #555;">Agregue a los profesores y alumnos del proyecto (mínimo 3 profesores y 5 alumnos).</p>
-        
-        <div id="contenedor-equipo"></div>
-
-        <button type="button" id="btn-agregar-integrante" style="padding: 8px 15px; background-color: #28a745; color: white; border: none; cursor: pointer; border-radius: 4px; margin-bottom: 20px;">
-            + Agregar Integrante
-        </button>
-
-        <hr style="margin: 30px 0;">
-
-        <h3>4. Cronograma de Etapas</h3>
-        <p style="font-size: 0.9em; color: #555;">Defina las etapas, plazos y entregables de su proyecto (Su cronograma completo no puede superar las 36 semanas).</p>
-        
-        <div id="contenedor-etapas"></div>
-
-        <button type="button" id="btn-agregar-etapa" style="padding: 8px 15px; background-color: #28a745; color: white; border: none; cursor: pointer; border-radius: 4px; margin-bottom: 30px;">
-            + Agregar Etapa
-        </button>
-        
-        <button type="button" id="btn-datos-prueba" style="padding: 10px 20px; background-color: #0d6efd; color: white; border: none; cursor: pointer; border-radius: 4px; margin-bottom: 20px;">
-            Rellenar datos de prueba
-        </button>
-
-        <br>
-
-        <button type="submit" style="padding: 10px 20px; background-color: #7952b3; color: white; border: none; cursor: pointer;">Guardar y Enviar Postulación</button>
-        <br>
-        <a href="home.php" style="margin-left: 15px; text-decoration: none; color: #dc3545;">Cancelar</a>
-    </form>
+    </div>
 </div>
 
 <script>
-// Manejo Dinámico de Integrantes
+// --- MANEJO DINÁMICO DE INTEGRANTES ---
 document.getElementById('btn-agregar-integrante').addEventListener('click', function() {
     var container = document.getElementById('contenedor-equipo');
     var row = document.createElement('div');
-    
-    row.style.display = 'flex';
-    row.style.flexWrap = 'wrap';
-    row.style.gap = '10px';
-    row.style.marginBottom = '10px';
+    row.className = 'row g-2 mb-3 align-items-end bg-light border p-3 rounded-3 position-relative';
     
     row.innerHTML = `
-        <input type="text" name="rut_integrante[]" placeholder="RUT (ej: 12345678-9)" style="flex: 1 1 150px; padding: 8px;" required>
-        <input type="text" name="nombre_integrante[]" placeholder="Nombre completo" style="flex: 1 1 220px; padding: 8px;" required>
-        <input type="text" name="depto_integrante[]" placeholder="Departamento" style="flex: 1 1 180px; padding: 8px;" required>
-        <input type="email" name="email_integrante[]" placeholder="Correo institucional" style="flex: 1 1 220px; padding: 8px;" required>
-        <input type="number" name="telefono_integrante[]" placeholder="Teléfono" style="flex: 1 1 130px; padding: 8px;" required>
-        <select name="id_sede_integrante[]" style="flex: 1 1 220px; padding: 8px;" required>
-            <option value="">Seleccione sede...</option>
-            <option value="1">Campus Casa Central Valparaíso</option>
-            <option value="2">Campus San Joaquín</option>
-            <option value="3">Campus Vitacura</option>
-            <option value="4">Sede Viña del Mar</option>
-            <option value="5">Sede Concepción</option>
-        </select>
-        <select name="tipo_integrante[]" style="flex: 1 1 150px; padding: 8px;" required>
-            <option value="">Tipo de persona...</option>
-            <option value="1">Profesor</option>
-            <option value="2">Estudiante</option>
-        </select>
-        <input type="text" name="rol_integrante[]" placeholder="Rol en el proyecto" style="flex: 1 1 180px; padding: 8px;" required>
-        <button type="button" onclick="this.parentElement.remove()" style="background-color: #dc3545; color: white; border: none; padding: 8px; cursor: pointer; border-radius: 4px;">X</button>
+        <div class="col-md-2"><input type="text" name="rut_integrante[]" class="form-control form-control-sm" placeholder="RUT (ej: 12345678-9)" required></div>
+        <div class="col-md-3"><input type="text" name="nombre_integrante[]" class="form-control form-control-sm" placeholder="Nombre completo" required></div>
+        <div class="col-md-3"><input type="text" name="depto_integrante[]" class="form-control form-control-sm" placeholder="Departamento" required></div>
+        <div class="col-md-4"><input type="email" name="email_integrante[]" class="form-control form-control-sm" placeholder="Correo electrónico" required></div>
+        <div class="col-md-2"><input type="number" name="telefono_integrante[]" class="form-control form-control-sm" placeholder="Teléfono" required></div>
+        <div class="col-md-3">
+            <select name="id_sede_integrante[]" class="form-select form-select-sm" required>
+                <option value="">Sede...</option>
+                <option value="1">Casa Central Valparaíso</option>
+                <option value="2">Campus San Joaquín</option>
+                <option value="3">Campus Vitacura</option>
+                <option value="4">Sede Viña del Mar</option>
+                <option value="5">Sede Concepción</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="tipo_integrante[]" class="form-select form-select-sm" required>
+                <option value="">Tipo...</option>
+                <option value="1">Profesor</option>
+                <option value="2">Estudiante</option>
+            </select>
+        </div>
+        <div class="col-md-4"><input type="text" name="rol_integrante[]" class="form-control form-control-sm" placeholder="Rol en el proyecto" required></div>
+        <div class="col-md-1 text-end"><button type="button" onclick="this.closest('.row').remove()" class="btn btn-danger btn-sm w-100" title="Eliminar Integrante">X</button></div>
     `;
     container.appendChild(row);
 });
 
-// Manejo Dinámico de Etapas del Cronograma
+// --- MANEJO DINÁMICO DE ETAPAS ---
 document.getElementById('btn-agregar-etapa').addEventListener('click', function() {
     var container = document.getElementById('contenedor-etapas');
     var row = document.createElement('div');
-    
-    row.style.display = 'flex';
-    row.style.flexWrap = 'wrap';
-    row.style.gap = '10px';
-    row.style.marginBottom = '10px';
+    row.className = 'row g-2 mb-2 align-items-center';
     
     row.innerHTML = `
-        <input type="text" name="nombre_etapa[]" placeholder="Nombre de la etapa" style="flex: 1 1 250px; padding: 8px;" required>
-        <input type="number" name="plazo_etapa[]" placeholder="Plazo (semanas)" style="flex: 1 1 100px; padding: 8px;" required>
-        <input type="text" name="entregable_etapa[]" placeholder="Entregable esperado" style="flex: 1 1 300px; padding: 8px;" required>
-        <button type="button" onclick="this.parentElement.remove()" style="background-color: #dc3545; color: white; border: none; padding: 8px; cursor: pointer; border-radius: 4px;">X</button>
+        <div class="col-md-4"><input type="text" name="nombre_etapa[]" class="form-control form-control-sm" placeholder="Nombre de la etapa" required></div>
+        <div class="col-md-2"><input type="number" name="plazo_etapa[]" class="form-control form-control-sm" placeholder="Semanas" required></div>
+        <div class="col-md-5"><input type="text" name="entregable_etapa[]" class="form-control form-control-sm" placeholder="Entregable esperado" required></div>
+        <div class="col-md-1 text-end"><button type="button" onclick="this.closest('.row').remove()" class="btn btn-danger btn-sm w-100">X</button></div>
     `;
     container.appendChild(row);
+});
 
-    // Botón para rellenar datos de prueba manualmente
-    document.getElementById('btn-datos-prueba').addEventListener('click', function() {
+// --- RELLENADO DE DATOS DE PRUEBA (Solucionado el bug de anidación) ---
+document.getElementById('btn-datos-prueba').addEventListener('click', function() {
 
-        function setCampo(nombre, valor) {
-            var campo = document.querySelector(`[name="${nombre}"]`);
-            if (campo) {
-                campo.value = valor;
-            }
-        }
+    function setCampo(nombre, valor) {
+        var campo = document.querySelector(\`[name="\${nombre}"]\`);
+        if (campo) { campo.value = valor; }
+    }
 
-        function setSelect(nombre, valorPreferido) {
-            var select = document.querySelector(`[name="${nombre}"]`);
+    function setSelect(nombre, valorPreferido) {
+        var select = document.querySelector(\`[name="\${nombre}"]\`);
+        if (!select) return;
 
-            if (!select) {
-                return;
-            }
+        var existeValor = Array.from(select.options).some(function(option) {
+            return option.value === valorPreferido;
+        });
 
-            var existeValor = Array.from(select.options).some(function(option) {
-                return option.value === valorPreferido;
+        if (existeValor) {
+            select.value = valorPreferido;
+        } else {
+            var primeraOpcionValida = Array.from(select.options).find(function(option) {
+                return option.value !== "";
             });
-
-            if (existeValor) {
-                select.value = valorPreferido;
-            } else {
-                var primeraOpcionValida = Array.from(select.options).find(function(option) {
-                    return option.value !== "";
-                });
-
-                if (primeraOpcionValida) {
-                    select.value = primeraOpcionValida.value;
-                }
+            if (primeraOpcionValida) {
+                select.value = primeraOpcionValida.value;
             }
         }
+    }
 
-        function agregarIntegrante(datos) {
-            document.getElementById('btn-agregar-integrante').click();
+    function agregarIntegrante(datos) {
+        document.getElementById('btn-agregar-integrante').click();
+        var contenedor = document.getElementById('contenedor-equipo');
+        var fila = contenedor.lastElementChild;
 
-            var contenedor = document.getElementById('contenedor-equipo');
-            var fila = contenedor.lastElementChild;
+        fila.querySelector('[name="rut_integrante[]"]').value = datos.rut;
+        fila.querySelector('[name="nombre_integrante[]"]').value = datos.nombre;
+        fila.querySelector('[name="depto_integrante[]"]').value = datos.depto;
+        fila.querySelector('[name="email_integrante[]"]').value = datos.email;
+        fila.querySelector('[name="telefono_integrante[]"]').value = datos.telefono;
+        fila.querySelector('[name="id_sede_integrante[]"]').value = datos.sede;
+        fila.querySelector('[name="tipo_integrante[]"]').value = datos.tipo;
+        fila.querySelector('[name="rol_integrante[]"]').value = datos.rol;
+    }
 
-            fila.querySelector('[name="rut_integrante[]"]').value = datos.rut;
-            fila.querySelector('[name="nombre_integrante[]"]').value = datos.nombre;
-            fila.querySelector('[name="depto_integrante[]"]').value = datos.depto;
-            fila.querySelector('[name="email_integrante[]"]').value = datos.email;
-            fila.querySelector('[name="telefono_integrante[]"]').value = datos.telefono;
-            fila.querySelector('[name="id_sede_integrante[]"]').value = datos.sede;
-            fila.querySelector('[name="tipo_integrante[]"]').value = datos.tipo;
-            fila.querySelector('[name="rol_integrante[]"]').value = datos.rol;
-        }
+    function agregarEtapa(datos) {
+        document.getElementById('btn-agregar-etapa').click();
+        var contenedor = document.getElementById('contenedor-etapas');
+        var fila = contenedor.lastElementChild;
 
-        function agregarEtapa(datos) {
-            document.getElementById('btn-agregar-etapa').click();
+        fila.querySelector('[name="nombre_etapa[]"]').value = datos.nombre;
+        fila.querySelector('[name="plazo_etapa[]"]').value = datos.plazo;
+        fila.querySelector('[name="entregable_etapa[]"]').value = datos.entregable;
+    }
 
-            var contenedor = document.getElementById('contenedor-etapas');
-            var fila = contenedor.lastElementChild;
+    // Limpia contenedores
+    document.getElementById('contenedor-equipo').innerHTML = "";
+    document.getElementById('contenedor-etapas').innerHTML = "";
 
-            fila.querySelector('[name="nombre_etapa[]"]').value = datos.nombre;
-            fila.querySelector('[name="plazo_etapa[]"]').value = datos.plazo;
-            fila.querySelector('[name="entregable_etapa[]"]').value = datos.entregable;
-        }
+    // Datos generales
+    setSelect('rut_empresa', '76.111.222-3');
+    setSelect('id_sede', '1');
+    setSelect('id_region_ejecucion', '5');
+    setSelect('id_region_impacto', '13');
+    setCampo('presupuesto', '12500000');
 
-        // Limpia integrantes y etapas anteriores para no duplicar filas si aprietas el botón más de una vez
-        document.getElementById('contenedor-equipo').innerHTML = "";
-        document.getElementById('contenedor-etapas').innerHTML = "";
+    // Datos de iniciativa
+    setCampo('nombre_iniciativa', 'Sistema piloto de gestión académica con IA');
+    setCampo('descripcion', 'La unidad académica necesita una herramienta que permita organizar postulaciones, equipos de trabajo, etapas y evaluaciones de proyectos de vinculación.');
+    setCampo('solucion', 'Se propone construir una plataforma web que centralice el registro de postulaciones, la asignación de evaluadores y el seguimiento del cronograma.');
+    setCampo('resultados_esperados', 'Prototipo funcional, reducción de tiempos de revisión y trazabilidad completa del proceso de postulación.');
+    setCampo('documentos', 'Carta de compromiso, planificación inicial, antecedentes técnicos y presupuesto estimado.');
+    setSelect('id_tipo_iniciativa', '1');
 
-        // Datos generales
-        setSelect('rut_empresa', '76.111.222-3');
-        setSelect('id_sede', '1');
-        setSelect('id_region_ejecucion', '5');
-        setSelect('id_region_impacto', '13');
-        setCampo('presupuesto', '12500000');
+    // Profesores
+    agregarIntegrante({ rut: '11.900.100-1', nombre: 'Profesor Prueba Uno', depto: 'Informática', email: 'profesor.prueba1@usm.cl', telefono: '987650001', sede: '1', tipo: '1', rol: 'Director del proyecto' });
+    agregarIntegrante({ rut: '11.900.100-2', nombre: 'Profesora Prueba Dos', depto: 'Matemática', email: 'profesora.prueba2@usm.cl', telefono: '987650002', sede: '2', tipo: '1', rol: 'Investigadora principal' });
+    agregarIntegrante({ rut: '11.900.100-3', nombre: 'Profesor Prueba Tres', depto: 'Electrónica', email: 'profesor.prueba3@usm.cl', telefono: '987650003', sede: '3', tipo: '1', rol: 'Asesor técnico' });
 
-        // Datos de iniciativa
-        setCampo('nombre_iniciativa', 'Sistema piloto de gestión académica con IA');
-        setCampo('descripcion', 'La unidad académica necesita una herramienta que permita organizar postulaciones, equipos de trabajo, etapas y evaluaciones de proyectos de vinculación.');
-        setCampo('solucion', 'Se propone construir una plataforma web que centralice el registro de postulaciones, la asignación de evaluadores y el seguimiento del cronograma.');
-        setCampo('resultados_esperados', 'Prototipo funcional, reducción de tiempos de revisión y trazabilidad completa del proceso de postulación.');
-        setCampo('documentos', 'Carta de compromiso, planificación inicial, antecedentes técnicos y presupuesto estimado.');
-        setSelect('id_tipo_iniciativa', '1');
+    // Estudiantes
+    agregarIntegrante({ rut: '20.111.111-1', nombre: 'Nombre Cambiado Prueba', depto: 'Departamento Cambiado', email: 'correo.cambiado.prueba@usm.cl', telefono: '900000001', sede: '5', tipo: '2', rol: 'QA Duplicado' });
+    agregarIntegrante({ rut: '21.900.100-2', nombre: 'Estudiante Prueba Dos', depto: 'Informática', email: 'estudiante.prueba2@usm.cl', telefono: '912340002', sede: '1', tipo: '2', rol: 'Desarrollador backend' });
+    agregarIntegrante({ rut: '21.900.100-3', nombre: 'Estudiante Prueba Tres', depto: 'Informática', email: 'estudiante.prueba3@usm.cl', telefono: '912340003', sede: '1', tipo: '2', rol: 'Desarrolladora frontend' });
+    agregarIntegrante({ rut: '21.900.100-4', nombre: 'Estudiante Prueba Cuatro', depto: 'Industrias', email: 'estudiante.prueba4@usm.cl', telefono: '912340004', sede: '2', tipo: '2', rol: 'Analista de datos' });
+    agregarIntegrante({ rut: '21.900.100-5', nombre: 'Estudiante Prueba Cinco', depto: 'Informática', email: 'estudiante.prueba5@usm.cl', telefono: '912340005', sede: '3', tipo: '2', rol: 'Documentador' });
 
-        // 3 profesores
-        agregarIntegrante({
-            rut: '11.900.100-1',
-            nombre: 'Profesor Prueba Uno',
-            depto: 'Informática',
-            email: 'profesor.prueba1@usm.cl',
-            telefono: '987650001',
-            sede: '1',
-            tipo: '1',
-            rol: 'Director del proyecto'
-        });
-
-        agregarIntegrante({
-            rut: '11.900.100-2',
-            nombre: 'Profesora Prueba Dos',
-            depto: 'Matemática',
-            email: 'profesora.prueba2@usm.cl',
-            telefono: '987650002',
-            sede: '2',
-            tipo: '1',
-            rol: 'Investigadora principal'
-        });
-
-        agregarIntegrante({
-            rut: '11.900.100-3',
-            nombre: 'Profesor Prueba Tres',
-            depto: 'Electrónica',
-            email: 'profesor.prueba3@usm.cl',
-            telefono: '987650003',
-            sede: '3',
-            tipo: '1',
-            rol: 'Asesor técnico'
-        });
-
-        // 5 estudiantes
-        // Este estudiante ya existe en el DML, pero le ponemos otros datos para probar INSERT IGNORE
-        agregarIntegrante({
-            rut: '20.111.111-1',
-            nombre: 'Nombre Cambiado Prueba',
-            depto: 'Departamento Cambiado',
-            email: 'correo.cambiado.prueba@usm.cl',
-            telefono: '900000001',
-            sede: '5',
-            tipo: '2',
-            rol: 'QA Duplicado'
-        });
-
-        agregarIntegrante({
-            rut: '21.900.100-2',
-            nombre: 'Estudiante Prueba Dos',
-            depto: 'Informática',
-            email: 'estudiante.prueba2@usm.cl',
-            telefono: '912340002',
-            sede: '1',
-            tipo: '2',
-            rol: 'Desarrollador backend'
-        });
-
-        agregarIntegrante({
-            rut: '21.900.100-3',
-            nombre: 'Estudiante Prueba Tres',
-            depto: 'Informática',
-            email: 'estudiante.prueba3@usm.cl',
-            telefono: '912340003',
-            sede: '1',
-            tipo: '2',
-            rol: 'Desarrolladora frontend'
-        });
-
-        agregarIntegrante({
-            rut: '21.900.100-4',
-            nombre: 'Estudiante Prueba Cuatro',
-            depto: 'Industrias',
-            email: 'estudiante.prueba4@usm.cl',
-            telefono: '912340004',
-            sede: '2',
-            tipo: '2',
-            rol: 'Analista de datos'
-        });
-
-        agregarIntegrante({
-            rut: '21.900.100-5',
-            nombre: 'Estudiante Prueba Cinco',
-            depto: 'Informática',
-            email: 'estudiante.prueba5@usm.cl',
-            telefono: '912340005',
-            sede: '3',
-            tipo: '2',
-            rol: 'Documentador'
-        });
-
-        // Cronograma: suma 23 semanas, menor que 36
-        agregarEtapa({
-            nombre: 'Levantamiento de requerimientos',
-            plazo: '4',
-            entregable: 'Documento de requerimientos validado'
-        });
-
-        agregarEtapa({
-            nombre: 'Diseño de la solución',
-            plazo: '5',
-            entregable: 'Modelo de datos y prototipo de interfaz'
-        });
-
-        agregarEtapa({
-            nombre: 'Desarrollo del sistema',
-            plazo: '8',
-            entregable: 'Aplicación funcional desplegada'
-        });
-
-        agregarEtapa({
-            nombre: 'Pruebas y validación',
-            plazo: '6',
-            entregable: 'Informe de pruebas y correcciones finales'
-        });
-    });
-    });
+    // Cronograma
+    agregarEtapa({ nombre: 'Levantamiento de requerimientos', plazo: '4', entregable: 'Documento de requerimientos validado' });
+    agregarEtapa({ nombre: 'Diseño de la solución', plazo: '5', entregable: 'Modelo de datos y prototipo de interfaz' });
+    agregarEtapa({ nombre: 'Desarrollo del sistema', plazo: '8', entregable: 'Aplicación funcional desplegada' });
+    agregarEtapa({ nombre: 'Pruebas y validación', plazo: '6', entregable: 'Informe de pruebas y correcciones finales' });
+});
 </script>
 
 <?php view('footer') ?>

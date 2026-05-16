@@ -93,272 +93,267 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['agregar_empresa']) &&
     }
 }
 
-// Obtener opciones únicas para los filtros desde la vista o tablas
-$sedes = db()->query("SELECT DISTINCT nombre_sede FROM VistaMisPostulaciones WHERE nombre_sede IS NOT NULL")->fetchAll(PDO::FETCH_COLUMN);
-$regiones = db()->query("SELECT DISTINCT nombre_region_ejecucion FROM VistaMisPostulaciones WHERE nombre_region_ejecucion IS NOT NULL")->fetchAll(PDO::FETCH_COLUMN);
-$estados = db()->query("SELECT DISTINCT nombre_estado_postulacion FROM VistaMisPostulaciones WHERE nombre_estado_postulacion IS NOT NULL")->fetchAll(PDO::FETCH_COLUMN);
-$tamanios = db()->query("SELECT DISTINCT tamanio FROM tamanio_empresa")->fetchAll(PDO::FETCH_COLUMN);
-
-/*
-$sql = "SELECT * FROM VistaMisPostulaciones";
-$parametros = [];
-
-if ($tipoUsuario != 3) {
-    // Consulta solo las postulaciones asignadas al usuario
-    $sql .= " WHERE responsable_1 = :user1 OR responsable_2 = :user2";
-    $parametros['user1'] = $usuarioActual;
-    $parametros['user2'] = $usuarioActual;
-}
-
-$stmt = db()->prepare($sql);
-$stmt->execute($parametros);
-$mis_postulaciones = $stmt->fetchAll(PDO::FETCH_ASSOC);
-*/
+$sedes = db()->query("SELECT nombre_sede FROM sede ORDER BY id_sede ASC")->fetchAll(PDO::FETCH_COLUMN);
+$regiones = db()->query("
+    SELECT id_region, nombre_region 
+    FROM region 
+    ORDER BY CASE id_region
+        WHEN 15 THEN 1  /* Arica y Parinacota */
+        WHEN 1 THEN 2   /* Tarapacá */
+        WHEN 2 THEN 3   /* Antofagasta */
+        WHEN 3 THEN 4   /* Atacama */
+        WHEN 4 THEN 5   /* Coquimbo */
+        WHEN 5 THEN 6   /* Valparaíso */
+        WHEN 13 THEN 7  /* Metropolitana */
+        WHEN 6 THEN 8   /* O'Higgins */
+        WHEN 7 THEN 9   /* Maule */
+        WHEN 16 THEN 10 /* Ñuble */
+        WHEN 8 THEN 11  /* Biobío */
+        WHEN 9 THEN 12  /* La Araucanía */
+        WHEN 14 THEN 13 /* Los Ríos */
+        WHEN 10 THEN 14 /* Los Lagos */
+        WHEN 11 THEN 15 /* Aysén */
+        WHEN 12 THEN 16 /* Magallanes */
+    END ASC
+")->fetchAll(PDO::FETCH_ASSOC);
+$estados = db()->query("SELECT nombre_estado_postulacion FROM estado_postulacion ORDER BY id_estado_postulacion ASC")->fetchAll(PDO::FETCH_COLUMN);
+$tamanios = db()->query("SELECT tamanio FROM tamanio_empresa ORDER BY id_tamanio ASC")->fetchAll(PDO::FETCH_COLUMN);
 ?>
 
-<?php view('header', ['title' => 'Mis Postulaciones']) ?>
+<div class="container py-5">
+    <div class="card shadow-lg border-0 rounded-4">
+        <div class="card-body p-4 p-md-5">
+            <?php view('header', ['title' => 'Mis Postulaciones']) ?>
+            
+            <div class="text-center mb-5">
+                <h2 class="fw-bold">Bienvenido, <span class="text-primary"><?= htmlspecialchars($usuarioActual) ?></span></h2>
+            </div>
 
-<h2>Bienvenido, <?= htmlspecialchars($usuarioActual) ?></h2>
-<?php if ($tipoUsuario == 3): ?>
-    <p>
-        <strong>Presupuesto total de postulaciones:</strong>
-        $<?= number_format($presupuestoTotal, 0, ',', '.') ?>
-    </p>
-<?php endif; ?>
-<br>
-<h3>Tus Postulaciones Asignadas (<?= count($mis_postulaciones) ?>)</h3>
+            <h3 class="h5 mb-3 text-secondary">Filtros y Búsqueda</h3>
+            
+            <form method="GET" action="home.php" class="bg-light p-4 rounded-3 mb-5">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold text-muted">Sede:</label>
+                        <select name="sede" class="form-select form-select-sm">
+                            <option value="">Todas</option>
+                            <?php foreach($sedes as $s): ?>
+                                <option value="<?= htmlspecialchars($s) ?>" <?= ($_GET['sede'] ?? '') == $s ? 'selected' : '' ?>><?= htmlspecialchars($s) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
 
-<br>
-<h3>Filtros de Búsqueda</h3>
-<form method="GET" action="home.php" style="background: #f4f4f4; padding: 15px; border-radius: 8px; display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end;">
-    
-    <div>
-        <label style="display:block; font-size: 0.8em;">Sede:</label>
-        <select name="sede">
-            <option value="">Todas</option>
-            <?php foreach($sedes as $s): ?>
-                <option value="<?= $s ?>" <?= ($_GET['sede'] ?? '') == $s ? 'selected' : '' ?>><?= $s ?></option>
-            <?php endforeach; ?>
-        </select>
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold text-muted">Región Ejecución:</label>
+                        <select name="id_region_ejecucion" class="form-select form-select-sm">
+                            <option value="">Todas</option>
+                            <?php foreach($regiones as $r): ?>
+                                <option value="<?= $r['id_region'] ?>" <?= ($_GET['id_region_ejecucion'] ?? '') == $r['id_region'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($r['nombre_region']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold text-muted">Región Impacto:</label>
+                        <select name="id_region_impacto" class="form-select form-select-sm">
+                            <option value="">Todas</option>
+                            <?php foreach($regiones as $r): ?>
+                                <option value="<?= $r['id_region'] ?>" <?= ($_GET['id_region_impacto'] ?? '') == $r['id_region'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($r['nombre_region']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold text-muted">Estado:</label>
+                        <select name="nombre_estado_postulacion" class="form-select form-select-sm">
+                            <option value="">Todos</option>
+                            <?php foreach($estados as $e): ?>
+                                <option value="<?= htmlspecialchars($e) ?>" <?= ($_GET['nombre_estado_postulacion'] ?? '') == $e ? 'selected' : '' ?>><?= htmlspecialchars($e) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold text-muted">Tamaño Empresa:</label>
+                        <select name="tamanio" class="form-select form-select-sm">
+                            <option value="">Todos</option>
+                            <?php foreach($tamanios as $t): ?>
+                                <option value="<?= htmlspecialchars($t) ?>" <?= ($_GET['tamanio'] ?? '') == $t ? 'selected' : '' ?>><?= htmlspecialchars($t) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <label class="form-label small fw-bold text-muted">Convenio USM:</label>
+                        <select name="convenio_usm" class="form-select form-select-sm">
+                            <option value="">Todos</option>
+                            <option value="Sí" <?= ($_GET['convenio_usm'] ?? '') == 'Sí' ? 'selected' : '' ?>>Sí</option>
+                            <option value="No" <?= ($_GET['convenio_usm'] ?? '') == 'No' ? 'selected' : '' ?>>No</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 mt-4 justify-content-end">
+                    <a href="home.php" class="btn btn-outline-secondary btn-sm px-4">Limpiar todo</a>
+                    <button type="submit" class="btn btn-primary btn-sm px-5">Aplicar Filtros y Buscar</button>
+                </div>
+
+                <!-- Barra de busqueda -->
+                <div class="mb-4">
+                    <label for="buscar" class="form-label fw-bold text-muted">Buscar postulación (Presiona Enter):</label>
+                    <input type="text" name="buscar" id="buscar" class="form-control form-control-lg border-primary" 
+                           placeholder="Escribe un número, iniciativa o empresa..." 
+                           value="<?= htmlspecialchars($_GET['buscar'] ?? '') ?>" />
+                </div>
+            </form>
+
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="h5 mb-0 text-secondary">Tus Postulaciones Asignadas <span class="badge bg-primary"><?= count($mis_postulaciones) ?></span></h3>
+            </div>
+            
+            <?php if (count($mis_postulaciones) > 0): ?>
+                <div class="table-responsive mb-5">
+                    <table class="table table-bordered table-striped table-hover align-middle">
+                        <thead class="table-dark text-center">
+                            <tr>
+                                <th>N°</th>
+                                <th>Iniciativa</th>
+                                <th>Empresa</th>
+                                <th>Estado</th>
+                                <th>Sede</th>
+                                <th>Fecha</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($mis_postulaciones as $postulacion): ?>
+                                <tr>
+                                    <td class="text-center fw-bold text-secondary"><?= htmlspecialchars($postulacion['numero_postulacion']) ?></td>
+                                    <td><?= htmlspecialchars($postulacion['nombre_iniciativa']) ?></td>
+                                    <td><?= htmlspecialchars($postulacion['nombre_empresa']) ?></td>
+                                    <td class="text-center">
+                                        <?php 
+                                            $estado = $postulacion['nombre_estado_postulacion'];
+                                            $clase_badge = '';
+                                            if ($estado === 'Aprobada') {
+                                                $clase_badge = 'bg-success';
+                                            } elseif ($estado === 'Rechazada'){
+                                                $clase_badge = 'bg-danger';
+                                            } else {
+                                                $clase_badge = 'bg-secondary';
+                                            }
+                                        ?>
+                                        <span class="badge <?= $clase_badge ?>">
+                                            <?= htmlspecialchars($estado) ?>
+                                        </span>
+                                    </td>
+                                    <td><?= htmlspecialchars($postulacion['nombre_sede']) ?></td>
+                                    <td class="text-center"><?= htmlspecialchars($postulacion['fecha_postulacion']) ?></td>
+                                    <td class="text-center">
+                                        <a href="detalle_postulacion.php?codigo=<?= urlencode($postulacion['codigo_postulacion']) ?>" class="btn btn-sm btn-outline-primary">
+                                            Ver +
+                                        </a>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+            <?php else: ?>
+                <div class="alert alert-warning mb-5">
+                    No tienes postulaciones asignadas que coincidan con tu búsqueda.
+                </div>
+            <?php endif; ?>
+            
+            <?php if ($tipoUsuario == 3): ?>
+                <div class="alert alert-info mb-4">
+                    <h4 class="alert-heading h6 fw-bold">Presupuesto total de postulaciones:</h4>
+                    <p class="mb-0 fs-5">$<?= number_format($presupuestoTotal, 0, ',', '.') ?></p>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($tipoUsuario==1): ?>
+                <div class="mb-4">
+                    <a href="crear_postulacion.php" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Crear nueva postulación
+                    </a>
+                </div>
+            <?php endif; ?>
+
+            <?php if ($tipoUsuario == 3): ?>
+                <div class="row g-4 mb-5">
+                    <div class="col-md-6">
+                        <div class="card h-100 border-primary">
+                            <div class="card-header bg-primary text-white fw-bold">Agregar nuevo evaluador</div>
+                            <div class="card-body">
+                                <?php if (!empty($mensajeNuevoEvaluador)): ?>
+                                    <div class="alert alert-secondary small py-2"><?= htmlspecialchars($mensajeNuevoEvaluador) ?></div>
+                                <?php endif; ?>
+                                <form method="POST">
+                                    <div class="mb-3">
+                                        <label for="nuevo_evaluador" class="form-label small">Nombre de usuario:</label>
+                                        <input type="text" name="nuevo_evaluador" id="nuevo_evaluador" class="form-control" placeholder="Ej: evaluador3" required>
+                                    </div>
+                                    <button type="submit" name="agregar_evaluador" class="btn btn-primary w-100">Agregar evaluador</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card h-100 border-primary">
+                            <div class="card-header bg-primary text-white fw-bold">Agregar nueva empresa</div>
+                            <div class="card-body">
+                                <?php if (!empty($mensajeNuevaEmpresa)): ?>
+                                    <div class="alert alert-secondary small py-2"><?= htmlspecialchars($mensajeNuevaEmpresa) ?></div>
+                                <?php endif; ?>
+                                <form method="POST" class="row g-2">
+                                    <div class="col-6">
+                                        <input type="text" name="rut_empresa" class="form-control form-control-sm" placeholder="RUT" required>
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="text" name="nombre_empresa" class="form-control form-control-sm" placeholder="Nombre" required>
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="text" name="nombre_representante" class="form-control form-control-sm" placeholder="Representante" required>
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="number" name="telefono_representante" class="form-control form-control-sm" placeholder="Teléfono" required>
+                                    </div>
+                                    <div class="col-6">
+                                        <select name="id_tamanio" class="form-select form-select-sm" required>
+                                            <option value="">Tamaño...</option>
+                                            <option value="1">Pequeña</option>
+                                            <option value="2">Mediana</option>
+                                            <option value="3">Grande</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-6">
+                                        <select name="id_convenio_usm" class="form-select form-select-sm" required>
+                                            <option value="">Convenio...</option>
+                                            <option value="1">Sí</option>
+                                            <option value="2">No</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 mt-3">
+                                        <button type="submit" name="agregar_empresa" class="btn btn-primary btn-sm w-100">Agregar empresa</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <hr>
+            <div class="text-end mt-4">
+                <a href="logout.php" class="btn btn-danger">Cerrar Sesión</a>
+            </div>
+        </div>
     </div>
-
-    <div>
-        <label style="display:block; font-size: 0.8em;">Región:</label>
-        <select name="region">
-            <option value="">Todas</option>
-            <?php foreach($regiones as $r): ?>
-                <option value="<?= $r ?>" <?= ($_GET['region'] ?? '') == $r ? 'selected' : '' ?>><?= $r ?></option>
-            <?php endforeach; ?>
-        </select>
-    </div>
-
-    <div>
-        <label style="display:block; font-size: 0.8em;">Estado:</label>
-        <select name="nombre_estado_postulacion">
-            <option value="">Todos</option>
-            <?php foreach($estados as $e): ?>
-                <option value="<?= $e ?>" <?= ($_GET['estado'] ?? '') == $e ? 'selected' : '' ?>><?= $e ?></option>
-            <?php endforeach; ?>
-        </select>
-    </div>
-
-    <div>
-        <label style="display:block; font-size: 0.8em;">Tamaño Empresa:</label>
-        <select name="tamanio">
-            <option value="">Todos</option>
-            <?php foreach($tamanios as $t): ?>
-                <option value="<?= $t ?>" <?= ($_GET['tamanio'] ?? '') == $t ? 'selected' : '' ?>><?= $t ?></option>
-            <?php endforeach; ?>
-        </select>
-    </div>
-
-    <div>
-        <label style="display:block; font-size: 0.8em;">Convenio USM:</label>
-        <select name="convenio_usm">
-            <option value="">Todos</option>
-            <option value="Sí" <?= ($_GET['convenio'] ?? '') == 'Sí' ? 'selected' : '' ?>>Sí</option>
-            <option value="No" <?= ($_GET['convenio'] ?? '') == 'No' ? 'selected' : '' ?>>No</option>
-        </select>
-    </div>
-
-    <button type="submit" style="background: #7952b3; color: white; border: none; padding: 8px 15px; cursor: pointer; border-radius: 4px;">Filtrar</button>
-    <a href="home.php" style="font-size: 0.8em; color: #666;">Limpiar</a>
-</form>
-
-<br>
-<!-- Barra de busqueda -->
-<div style="margin-bottom: 20px;">
-
-    <label for="search"><strong>Buscar postulación:</strong></label>
-    <input type="text" id="search" placeholder="Escribe un número, iniciativa o empresa..." style="padding: 8px; width: 310px;" />
 </div>
-
-<?php if (count($mis_postulaciones) > 0): ?>
-    <table border="1">
-        <thead>
-            <tr>
-                <th>Número de postulación</th>
-                <th>Iniciativa</th>
-                <th>Empresa</th>
-                <th>Estado</th>
-                <th>Sede</th>
-                <th>Fecha</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($mis_postulaciones as $postulacion): ?>
-                <tr>
-                    <td><?= htmlspecialchars($postulacion['numero_postulacion']) ?></td>
-                    <td><?= htmlspecialchars($postulacion['nombre_iniciativa']) ?></td>
-                    <td><?= htmlspecialchars($postulacion['nombre_empresa']) ?></td>
-                    <td><?= htmlspecialchars($postulacion['nombre_estado_postulacion']) ?></td>
-                    <td><?= htmlspecialchars($postulacion['nombre_sede']) ?></td>
-                    <td><?= htmlspecialchars($postulacion['fecha_postulacion']) ?></td>
-                    <td>
-                        <a href="detalle_postulacion.php?codigo=<?= urlencode($postulacion['codigo_postulacion']) ?>">
-                            Ver +
-                        </a>
-                    </td>
-                </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-<?php else: ?>
-    <p>No tienes postulaciones asignadas en este momento.</p>
-<?php endif; ?>
-<br><br>
-
-<?php if ($tipoUsuario==1): ?>
-<a href="crear_postulacion.php">
-    Crear nueva postulación
-</a>
-<?php endif; ?>
-
-<?php if ($tipoUsuario == 3): ?>
-    <hr>
-
-    <h3>Agregar nuevo evaluador</h3>
-
-    <?php if (!empty($mensajeNuevoEvaluador)): ?>
-        <p><strong><?= htmlspecialchars($mensajeNuevoEvaluador) ?></strong></p>
-    <?php endif; ?>
-
-    <form method="POST">
-        <label for="nuevo_evaluador"><strong>Nombre de usuario:</strong></label>
-        <input 
-            type="text" 
-            name="nuevo_evaluador" 
-            id="nuevo_evaluador" 
-            placeholder="Ej: evaluador3" 
-            required
-            style="padding: 8px; width: 220px;"
-        >
-
-        <button 
-            type="submit" 
-            name="agregar_evaluador"
-            style="padding: 8px 15px; background-color: #7952b3; color: white; border: none; cursor: pointer;"
-        >
-            Agregar evaluador
-        </button>
-    </form>
-
-    <br>
-<?php endif; ?>
-
-<?php if ($tipoUsuario == 3): ?>
-    <hr>
-
-    <h3>Agregar nueva empresa</h3>
-
-    <?php if (!empty($mensajeNuevaEmpresa)): ?>
-        <p><strong><?= htmlspecialchars($mensajeNuevaEmpresa) ?></strong></p>
-    <?php endif; ?>
-
-    <form method="POST">
-        <input 
-            type="text" 
-            name="rut_empresa" 
-            placeholder="RUT empresa"
-            required
-            style="padding: 8px;"
-        >
-
-        <input 
-            type="text" 
-            name="nombre_empresa" 
-            placeholder="Nombre empresa"
-            required
-            style="padding: 8px;"
-        >
-
-        <input 
-            type="text" 
-            name="nombre_representante" 
-            placeholder="Nombre representante"
-            required
-            style="padding: 8px;"
-        >
-
-        <input 
-            type="number" 
-            name="telefono_representante" 
-            placeholder="Teléfono representante"
-            required
-            style="padding: 8px;"
-        >
-
-        <select name="id_tamanio" required style="padding: 8px;">
-            <option value="">Tamaño empresa...</option>
-            <option value="1">Pequeña</option>
-            <option value="2">Mediana</option>
-            <option value="3">Grande</option>
-        </select>
-
-        <select name="id_convenio_usm" required style="padding: 8px;">
-            <option value="">Convenio USM...</option>
-            <option value="1">Sí</option>
-            <option value="2">No</option>
-        </select>
-
-        <button 
-            type="submit" 
-            name="agregar_empresa"
-            style="padding: 8px 15px; background-color: #7952b3; color: white; border: none; cursor: pointer;"
-        >
-            Agregar empresa
-        </button>
-    </form>
-
-    <br>
-<?php endif; ?>
-
-<br>
-<a href="logout.php">Cerrar Sesión</a>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const searchInput = document.getElementById('search');
-        
-        if (searchInput) {
-            searchInput.addEventListener('input', function() {
-                
-                const searchTerm = this.value.toLowerCase();
-                
-                const rows = document.querySelectorAll('tbody tr');
-
-                rows.forEach(row => {
-                    const rowText = row.textContent.toLowerCase();
-                    
-                    if (rowText.includes(searchTerm)) {
-                        row.style.display = '';
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-            });
-        }
-    });
-</script>
-
 <?php view('footer') ?>

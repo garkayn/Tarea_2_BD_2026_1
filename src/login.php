@@ -13,6 +13,10 @@ if (is_post_request()) {
         'username' => 'raw | required'
     ]);
 
+    if (isset($errors['username'])) {
+        $errors['username'] = 'El nombre de usuario es obligatorio.';
+    }
+
     if ($errors) {
         redirect_with('login.php', ['errors' => $errors, 'inputs' => $inputs]);
     }
@@ -20,7 +24,7 @@ if (is_post_request()) {
     // if login fails
     if (!login($inputs['username'])) {
 
-        $errors['login'] = 'Invalid username';
+        $errors['username'] = 'Nombre de usuario incorrecto o no registrado';
 
         redirect_with('login.php', [
             'errors' => $errors,
