@@ -123,14 +123,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
         }
 
-        $sqlRevisarEquipo = "CALL VerificarRequisitoEquipo(:codigo)";
-        $stmtRevisarEq = db()->prepare($sqlRevisarEquipo);
-        $stmtRevisarEq->execute(['codigo' => $codigo]);
-
-        $sqlRevisarCronograma = "CALL VerificarRequisitoCronograma(:codigo)";
-        $stmtRevisarCr = db()->prepare($sqlRevisarCronograma);
-        $stmtRevisarCr->execute(['codigo' => $codigo]);
-
         db()->commit();
         redirect_to("detalle_postulacion.php?codigo=" . urlencode($codigo));
 
@@ -373,7 +365,6 @@ $etapasActuales = $stmtEtapas->fetchAll(PDO::FETCH_ASSOC);
 </div>
 
 <script>
-// El código JS se adaptó para generar exactamente las mismas clases de Bootstrap que usamos arriba
 document.getElementById('btn-agregar-integrante').addEventListener('click', function() {
     var container = document.getElementById('contenedor-equipo');
     var row = document.createElement('div');

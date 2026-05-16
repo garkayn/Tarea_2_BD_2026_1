@@ -131,12 +131,13 @@ $tamanios = db()->query("SELECT tamanio FROM tamanio_empresa ORDER BY id_tamanio
 
             <h3 class="h5 mb-3 text-secondary">Filtros y Búsqueda</h3>
             
+            <!-- Filtros Combinables -->
             <form method="GET" action="home.php" class="bg-light p-4 rounded-3 mb-5">
                 <div class="row g-3 align-items-end">
                     <div class="col-md-2">
                         <label class="form-label small fw-bold text-muted">Sede:</label>
                         <select name="sede" class="form-select form-select-sm">
-                            <option value="">Todas</option>
+                            <option value="">Todos</option>
                             <?php foreach($sedes as $s): ?>
                                 <option value="<?= htmlspecialchars($s) ?>" <?= ($_GET['sede'] ?? '') == $s ? 'selected' : '' ?>><?= htmlspecialchars($s) ?></option>
                             <?php endforeach; ?>
@@ -146,7 +147,7 @@ $tamanios = db()->query("SELECT tamanio FROM tamanio_empresa ORDER BY id_tamanio
                     <div class="col-md-2">
                         <label class="form-label small fw-bold text-muted">Región Ejecución:</label>
                         <select name="id_region_ejecucion" class="form-select form-select-sm">
-                            <option value="">Todas</option>
+                            <option value="">Todos</option>
                             <?php foreach($regiones as $r): ?>
                                 <option value="<?= $r['id_region'] ?>" <?= ($_GET['id_region_ejecucion'] ?? '') == $r['id_region'] ? 'selected' : '' ?>>
                                     <?= htmlspecialchars($r['nombre_region']) ?>
@@ -158,7 +159,7 @@ $tamanios = db()->query("SELECT tamanio FROM tamanio_empresa ORDER BY id_tamanio
                     <div class="col-md-2">
                         <label class="form-label small fw-bold text-muted">Región Impacto:</label>
                         <select name="id_region_impacto" class="form-select form-select-sm">
-                            <option value="">Todas</option>
+                            <option value="">Todos</option>
                             <?php foreach($regiones as $r): ?>
                                 <option value="<?= $r['id_region'] ?>" <?= ($_GET['id_region_impacto'] ?? '') == $r['id_region'] ? 'selected' : '' ?>>
                                     <?= htmlspecialchars($r['nombre_region']) ?>
@@ -199,15 +200,26 @@ $tamanios = db()->query("SELECT tamanio FROM tamanio_empresa ORDER BY id_tamanio
 
                 <div class="d-flex gap-2 mt-4 justify-content-end">
                     <a href="home.php" class="btn btn-outline-secondary btn-sm px-4">Limpiar todo</a>
-                    <button type="submit" class="btn btn-primary btn-sm px-5">Aplicar Filtros y Buscar</button>
+                    <button type="submit" class="btn btn-primary btn-sm px-5">Aplicar Filtros</button>
                 </div>
-
-                <!-- Barra de busqueda -->
-                <div class="mb-4">
-                    <label for="buscar" class="form-label fw-bold text-muted">Buscar postulación (Presiona Enter):</label>
-                    <input type="text" name="buscar" id="buscar" class="form-control form-control-lg border-primary" 
-                           placeholder="Escribe un número, iniciativa o empresa..." 
-                           value="<?= htmlspecialchars($_GET['buscar'] ?? '') ?>" />
+            </form>
+            
+            <!-- Barra de busqueda -->
+            <form method="GET" action="" class="mb-4" >
+                <div class="input-group shadow-sm">
+                    <span class="input-group-text bg-white text-primary border-end-0">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" name="buscar" class="form-control border-start-0" 
+                        placeholder="Buscar por N° de postulación, iniciativa o empresa..." 
+                        value="<?= htmlspecialchars($_GET['buscar'] ?? '') ?>">
+                    <button type="submit" class="btn btn-primary fw-bold px-4">Buscar</button>
+                    
+                    <?php if (!empty($_GET['buscar'])): ?>
+                        <a href="?" class="btn btn-outline-danger px-3 fw-bold" title="Limpiar búsqueda">
+                            X
+                        </a>
+                    <?php endif; ?>
                 </div>
             </form>
 

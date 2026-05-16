@@ -162,20 +162,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
         }
 
-        // Llamadas a los procedimientos almacenados
-        $sqlRevisarEquipo = "CALL VerificarRequisitoEquipo(:codigo)";
-        $stmtRevisarEq = db()->prepare($sqlRevisarEquipo);
-        $stmtRevisarEq->execute(['codigo' => $codigoGenerado]);
-
-        $sqlRevisarCronograma = "CALL VerificarRequisitoCronograma(:codigo)";
-        $stmtRevisarCr = db()->prepare($sqlRevisarCronograma);
-        $stmtRevisarCr->execute(['codigo' => $codigoGenerado]);
-
-        // Si todo pasó, marcamos la postulación como "Enviada" (1)
-        $sqlEstado = "UPDATE postulacion SET id_estado_postulacion = 1 WHERE codigo_postulacion = :codigo";
-        $stmtEstado = db()->prepare($sqlEstado);
-        $stmtEstado->execute(['codigo' => $codigoGenerado]);
-
         db()->commit();
         redirect_to('home.php');
 
@@ -346,7 +332,7 @@ $listaSedes = $stmtSedes->fetchAll(PDO::FETCH_ASSOC);
                 <div id="contenedor-etapas"></div>
 
                 <div class="mt-5 d-flex gap-3 pt-3 border-top">
-                    <button type="submit" class="btn btn-primary btn-lg px-5 fw-bold">Guardar y Enviar Postulación</button>
+                    <button type="submit" class="btn btn-primary btn-lg px-5 fw-bold">Guardar como borrador</button>
                     <a href="home.php" class="btn btn-outline-danger btn-lg px-4">Cancelar</a>
                 </div>
             </form>
@@ -405,95 +391,110 @@ document.getElementById('btn-agregar-etapa').addEventListener('click', function(
     container.appendChild(row);
 });
 
-// --- RELLENADO DE DATOS DE PRUEBA (Solucionado el bug de anidación) ---
-document.getElementById('btn-datos-prueba').addEventListener('click', function() {
+document.addEventListener('DOMContentLoaded', function() {
+    var btnPrueba = document.getElementById('btn-datos-prueba');
+    
+    if (btnPrueba) {
+        btnPrueba.addEventListener('click', function() {
 
-    function setCampo(nombre, valor) {
-        var campo = document.querySelector(\`[name="\${nombre}"]\`);
-        if (campo) { campo.value = valor; }
-    }
-
-    function setSelect(nombre, valorPreferido) {
-        var select = document.querySelector(\`[name="\${nombre}"]\`);
-        if (!select) return;
-
-        var existeValor = Array.from(select.options).some(function(option) {
-            return option.value === valorPreferido;
-        });
-
-        if (existeValor) {
-            select.value = valorPreferido;
-        } else {
-            var primeraOpcionValida = Array.from(select.options).find(function(option) {
-                return option.value !== "";
-            });
-            if (primeraOpcionValida) {
-                select.value = primeraOpcionValida.value;
+            function setCampo(nombre, valor) {
+                var campo = document.querySelector(`[name="${nombre}"]`);
+                if (campo) { campo.value = valor; }
             }
-        }
+
+            function setSelect(nombre, valorPreferido) {
+                var select = document.querySelector(`[name="${nombre}"]`);
+                if (!select) return;
+
+                var existeValor = Array.from(select.options).some(function(option) {
+                    return option.value === valorPreferido;
+                });
+
+                if (existeValor) {
+                    select.value = valorPreferido;
+                } else {
+                    var primeraOpcionValida = Array.from(select.options).find(function(option) {
+                        return option.value !== "";
+                    });
+                    if (primeraOpcionValida) {
+                        select.value = primeraOpcionValida.value;
+                    }
+                }
+            }
+
+            function agregarIntegrante(datos) {
+                var btnAgregar = document.getElementById('btn-agregar-integrante');
+                if (btnAgregar) {
+                    btnAgregar.click();
+                    var contenedor = document.getElementById('contenedor-equipo');
+                    var fila = contenedor.lastElementChild;
+
+                    if (fila) {
+                        fila.querySelector('[name="rut_integrante[]"]').value = datos.rut;
+                        fila.querySelector('[name="nombre_integrante[]"]').value = datos.nombre;
+                        fila.querySelector('[name="depto_integrante[]"]').value = datos.depto;
+                        fila.querySelector('[name="email_integrante[]"]').value = datos.email;
+                        fila.querySelector('[name="telefono_integrante[]"]').value = datos.telefono;
+                        fila.querySelector('[name="id_sede_integrante[]"]').value = datos.sede;
+                        fila.querySelector('[name="tipo_integrante[]"]').value = datos.tipo;
+                        fila.querySelector('[name="rol_integrante[]"]').value = datos.rol;
+                    }
+                }
+            }
+
+            function agregarEtapa(datos) {
+                var btnAgregar = document.getElementById('btn-agregar-etapa');
+                if (btnAgregar) {
+                    btnAgregar.click();
+                    var contenedor = document.getElementById('contenedor-etapas');
+                    var fila = contenedor.lastElementChild;
+
+                    if (fila) {
+                        fila.querySelector('[name="nombre_etapa[]"]').value = datos.nombre;
+                        fila.querySelector('[name="plazo_etapa[]"]').value = datos.plazo;
+                        fila.querySelector('[name="entregable_etapa[]"]').value = datos.entregable;
+                    }
+                }
+            }
+
+            // Limpia contenedores
+            document.getElementById('contenedor-equipo').innerHTML = "";
+            document.getElementById('contenedor-etapas').innerHTML = "";
+
+            // Datos generales
+            setSelect('rut_empresa', '76.111.222-3');
+            setSelect('id_sede', '1');
+            setSelect('id_region_ejecucion', '5');
+            setSelect('id_region_impacto', '13');
+            setCampo('presupuesto', '12500000');
+
+            // Datos de iniciativa
+            setCampo('nombre_iniciativa', 'Sistema piloto de gestión académica con IA');
+            setCampo('descripcion', 'La unidad académica necesita una herramienta que permita organizar postulaciones, equipos de trabajo, etapas y evaluaciones de proyectos de vinculación.');
+            setCampo('solucion', 'Se propone construir una plataforma web que centralice el registro de postulaciones, la asignación de evaluadores y el seguimiento del cronograma.');
+            setCampo('resultados_esperados', 'Prototipo funcional, reducción de tiempos de revisión y trazabilidad completa del proceso de postulación.');
+            setCampo('documentos', 'Carta de compromiso, planificación inicial, antecedentes técnicos y presupuesto estimado.');
+            setSelect('id_tipo_iniciativa', '1');
+
+            // Profesores (3)
+            agregarIntegrante({ rut: '11.900.100-1', nombre: 'Profesor Prueba Uno', depto: 'Informática', email: 'profesor.prueba1@usm.cl', telefono: '987650001', sede: '1', tipo: '1', rol: 'Director del proyecto' });
+            agregarIntegrante({ rut: '11.900.100-2', nombre: 'Profesora Prueba Dos', depto: 'Matemática', email: 'profesora.prueba2@usm.cl', telefono: '987650002', sede: '2', tipo: '1', rol: 'Investigadora principal' });
+            agregarIntegrante({ rut: '11.900.100-3', nombre: 'Profesor Prueba Tres', depto: 'Electrónica', email: 'profesor.prueba3@usm.cl', telefono: '987650003', sede: '3', tipo: '1', rol: 'Asesor técnico' });
+
+            // Estudiantes (5)
+            agregarIntegrante({ rut: '20.111.111-1', nombre: 'Nombre Cambiado Prueba', depto: 'Departamento Cambiado', email: 'correo.cambiado.prueba@usm.cl', telefono: '900000001', sede: '5', tipo: '2', rol: 'QA Duplicado' });
+            agregarIntegrante({ rut: '21.900.100-2', nombre: 'Estudiante Prueba Dos', depto: 'Informática', email: 'estudiante.prueba2@usm.cl', telefono: '912340002', sede: '1', tipo: '2', rol: 'Desarrollador backend' });
+            agregarIntegrante({ rut: '21.900.100-3', nombre: 'Estudiante Prueba Tres', depto: 'Informática', email: 'estudiante.prueba3@usm.cl', telefono: '912340003', sede: '1', tipo: '2', rol: 'Desarrolladora frontend' });
+            agregarIntegrante({ rut: '21.900.100-4', nombre: 'Estudiante Prueba Cuatro', depto: 'Industrias', email: 'estudiante.prueba4@usm.cl', telefono: '912340004', sede: '2', tipo: '2', rol: 'Analista de datos' });
+            agregarIntegrante({ rut: '21.900.100-5', nombre: 'Estudiante Prueba Cinco', depto: 'Informática', email: 'estudiante.prueba5@usm.cl', telefono: '912340005', sede: '3', tipo: '2', rol: 'Documentador' });
+
+            // Cronograma
+            agregarEtapa({ nombre: 'Levantamiento de requerimientos', plazo: '4', entregable: 'Documento de requerimientos validado' });
+            agregarEtapa({ nombre: 'Diseño de la solución', plazo: '5', entregable: 'Modelo de datos y prototipo de interfaz' });
+            agregarEtapa({ nombre: 'Desarrollo del sistema', plazo: '8', entregable: 'Aplicación funcional desplegada' });
+            agregarEtapa({ nombre: 'Pruebas y validación', plazo: '6', entregable: 'Informe de pruebas y correcciones finales' });
+        });
     }
-
-    function agregarIntegrante(datos) {
-        document.getElementById('btn-agregar-integrante').click();
-        var contenedor = document.getElementById('contenedor-equipo');
-        var fila = contenedor.lastElementChild;
-
-        fila.querySelector('[name="rut_integrante[]"]').value = datos.rut;
-        fila.querySelector('[name="nombre_integrante[]"]').value = datos.nombre;
-        fila.querySelector('[name="depto_integrante[]"]').value = datos.depto;
-        fila.querySelector('[name="email_integrante[]"]').value = datos.email;
-        fila.querySelector('[name="telefono_integrante[]"]').value = datos.telefono;
-        fila.querySelector('[name="id_sede_integrante[]"]').value = datos.sede;
-        fila.querySelector('[name="tipo_integrante[]"]').value = datos.tipo;
-        fila.querySelector('[name="rol_integrante[]"]').value = datos.rol;
-    }
-
-    function agregarEtapa(datos) {
-        document.getElementById('btn-agregar-etapa').click();
-        var contenedor = document.getElementById('contenedor-etapas');
-        var fila = contenedor.lastElementChild;
-
-        fila.querySelector('[name="nombre_etapa[]"]').value = datos.nombre;
-        fila.querySelector('[name="plazo_etapa[]"]').value = datos.plazo;
-        fila.querySelector('[name="entregable_etapa[]"]').value = datos.entregable;
-    }
-
-    // Limpia contenedores
-    document.getElementById('contenedor-equipo').innerHTML = "";
-    document.getElementById('contenedor-etapas').innerHTML = "";
-
-    // Datos generales
-    setSelect('rut_empresa', '76.111.222-3');
-    setSelect('id_sede', '1');
-    setSelect('id_region_ejecucion', '5');
-    setSelect('id_region_impacto', '13');
-    setCampo('presupuesto', '12500000');
-
-    // Datos de iniciativa
-    setCampo('nombre_iniciativa', 'Sistema piloto de gestión académica con IA');
-    setCampo('descripcion', 'La unidad académica necesita una herramienta que permita organizar postulaciones, equipos de trabajo, etapas y evaluaciones de proyectos de vinculación.');
-    setCampo('solucion', 'Se propone construir una plataforma web que centralice el registro de postulaciones, la asignación de evaluadores y el seguimiento del cronograma.');
-    setCampo('resultados_esperados', 'Prototipo funcional, reducción de tiempos de revisión y trazabilidad completa del proceso de postulación.');
-    setCampo('documentos', 'Carta de compromiso, planificación inicial, antecedentes técnicos y presupuesto estimado.');
-    setSelect('id_tipo_iniciativa', '1');
-
-    // Profesores
-    agregarIntegrante({ rut: '11.900.100-1', nombre: 'Profesor Prueba Uno', depto: 'Informática', email: 'profesor.prueba1@usm.cl', telefono: '987650001', sede: '1', tipo: '1', rol: 'Director del proyecto' });
-    agregarIntegrante({ rut: '11.900.100-2', nombre: 'Profesora Prueba Dos', depto: 'Matemática', email: 'profesora.prueba2@usm.cl', telefono: '987650002', sede: '2', tipo: '1', rol: 'Investigadora principal' });
-    agregarIntegrante({ rut: '11.900.100-3', nombre: 'Profesor Prueba Tres', depto: 'Electrónica', email: 'profesor.prueba3@usm.cl', telefono: '987650003', sede: '3', tipo: '1', rol: 'Asesor técnico' });
-
-    // Estudiantes
-    agregarIntegrante({ rut: '20.111.111-1', nombre: 'Nombre Cambiado Prueba', depto: 'Departamento Cambiado', email: 'correo.cambiado.prueba@usm.cl', telefono: '900000001', sede: '5', tipo: '2', rol: 'QA Duplicado' });
-    agregarIntegrante({ rut: '21.900.100-2', nombre: 'Estudiante Prueba Dos', depto: 'Informática', email: 'estudiante.prueba2@usm.cl', telefono: '912340002', sede: '1', tipo: '2', rol: 'Desarrollador backend' });
-    agregarIntegrante({ rut: '21.900.100-3', nombre: 'Estudiante Prueba Tres', depto: 'Informática', email: 'estudiante.prueba3@usm.cl', telefono: '912340003', sede: '1', tipo: '2', rol: 'Desarrolladora frontend' });
-    agregarIntegrante({ rut: '21.900.100-4', nombre: 'Estudiante Prueba Cuatro', depto: 'Industrias', email: 'estudiante.prueba4@usm.cl', telefono: '912340004', sede: '2', tipo: '2', rol: 'Analista de datos' });
-    agregarIntegrante({ rut: '21.900.100-5', nombre: 'Estudiante Prueba Cinco', depto: 'Informática', email: 'estudiante.prueba5@usm.cl', telefono: '912340005', sede: '3', tipo: '2', rol: 'Documentador' });
-
-    // Cronograma
-    agregarEtapa({ nombre: 'Levantamiento de requerimientos', plazo: '4', entregable: 'Documento de requerimientos validado' });
-    agregarEtapa({ nombre: 'Diseño de la solución', plazo: '5', entregable: 'Modelo de datos y prototipo de interfaz' });
-    agregarEtapa({ nombre: 'Desarrollo del sistema', plazo: '8', entregable: 'Aplicación funcional desplegada' });
-    agregarEtapa({ nombre: 'Pruebas y validación', plazo: '6', entregable: 'Informe de pruebas y correcciones finales' });
 });
 </script>
 

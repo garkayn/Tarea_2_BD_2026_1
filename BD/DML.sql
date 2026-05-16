@@ -27,10 +27,11 @@ INSERT INTO sede (id_sede, nombre_sede) VALUES
 
 INSERT INTO estado_postulacion (id_estado_postulacion, nombre_estado_postulacion) VALUES 
 (1, 'Borrador'),
-(2, 'En Revisión'),
-(3, 'Aprobada'),
-(4, 'Rechazada'),
-(5, 'Cerrada');
+(2, 'Envíada'),
+(3, 'En Revisión'),
+(4, 'Aprobada'),
+(5, 'Rechazada'),
+(6, 'Cerrada');
 
 INSERT INTO tipo_iniciativa (id_tipo_iniciativa, nombre_tipo_iniciativa) VALUES 
 (1, 'Nueva'),
@@ -121,12 +122,12 @@ INSERT INTO empresa (rut_empresa, id_tamanio, nombre_empresa, nombre_representan
 ('79.777.888-9', 3, 'GlobalCorp', 'Roberto Muñoz', 977778888, 2),
 ('80.999.000-1', 2, 'AgroTech Limitada', 'Marta Fernández', 999990000, 1),
 ('81.123.456-7', 1, 'DevOps Sur', 'Diego Castro', 912312312, 2),
-('90.111.222-K', 3, 'TechSolutions SA', 'Andrea Gómez', 911112222, 1),
-('91.222.333-1', 2, 'EcoDev SPA', 'Luis Felipe Silva', 933334444, 2),
-('92.333.444-2', 1, 'InnovaStart', 'Camila Rojas', 955556666, 1),
-('93.444.555-3', 3, 'GlobalCorp', 'Roberto Muñoz', 977778888, 2),
-('94.555.666-4', 2, 'AgroTech Limitada', 'Marta Fernández', 999990000, 1),
-('95.666.777-5', 1, 'DevOps Sur', 'Diego Castro', 912312312, 2);
+('90.111.222-K', 3, 'DataMinds Consultores', 'Andrea Gómez', 911112222, 1),
+('91.222.333-1', 2, 'GreenFuture SPA', 'Luis Felipe Silva', 933334444, 2),
+('92.333.444-2', 1, 'Nexus Creativo', 'Camila Rojas', 955556666, 1),
+('93.444.555-3', 3, 'Logística Austral SA', 'Roberto Muñoz', 977778888, 2),
+('94.555.666-4', 2, 'BioCultivos del Valle', 'Marta Fernández', 999990000, 1),
+('95.666.777-5', 1, 'CloudBuilders Limitada', 'Diego Castro', 912312312, 2);
 
 INSERT INTO integrante (rut_integrante, nombre_integrante, depto_integrante, email_integrante, telefono_integrante, id_sede, id_tipo_persona) VALUES 
 ('10.111.111-1', 'Juan Soto', 'Informática', 'juan.soto@usm.cl', 987654321, 1, 1),
@@ -250,21 +251,21 @@ INSERT INTO postulacion (
     numero_postulacion, presupuesto, id_sede, id_region_ejecucion, 
     id_region_impacto, rut_empresa, id_estado_postulacion
 ) VALUES 
-(1001, '2026-04-03', 'Matías Jorquera', 'Juan Carlos', 1, 2500000, 1, 8, 8, '76.111.222-3', 2),
-(1002, '2026-04-10', 'Pedro Pascal', 'Oscar Isaac', 2, 5000000, 2, 13, 13, '77.333.444-5', 1),
-(1003, '2026-04-12', 'Isabel Allende', 'Roberto Bolaño', 3, 3500000, 3, 13, 5, '79.777.888-9', 2),
-(1004, '2026-04-15', 'Gabriela Mistral', 'Pablo Neruda', 4, 1800000, 4, 5, 5, '76.111.222-3', 1),
-(1005, '2026-04-18', 'Violeta Parra', 'Victor Jara', 5, 4200000, 5, 8, 9, '80.999.000-1', 2),
-(1006, '2026-04-20', 'Arturo Prat', 'Miguel Grau', 6, 1500000, 1, 4, 4, '81.123.456-7', 3),
+(1001, '2026-04-03', 'Matías Jorquera', 'Juan Carlos', 1, 2500000, 1, 8, 8, '76.111.222-3', 3),
+(1002, '2026-04-10', 'Pedro Pascal', 'Oscar Isaac', 2, 5000000, 2, 13, 13, '77.333.444-5', 4),
+(1003, '2026-04-12', 'Isabel Allende', 'Roberto Bolaño', 3, 3500000, 3, 13, 5, '79.777.888-9', 5),
+(1004, '2026-04-15', 'Gabriela Mistral', 'Pablo Neruda', 4, 1800000, 4, 5, 5, '76.111.222-3', 5),
+(1005, '2026-04-18', 'Violeta Parra', 'Victor Jara', 5, 4200000, 5, 8, 9, '80.999.000-1', 3),
+(1006, '2026-04-20', 'Arturo Prat', 'Miguel Grau', 6, 1500000, 1, 4, 4, '81.123.456-7', 4),
 (1007, '2026-04-22', 'Manuel Rodriguez', 'Jose Miguel Carrera', 7, 3000000, 2, 13, 1, '77.333.444-5', 4),
-(1008, '2026-04-25', 'Elena Caffarena', 'Amanda Labarca', 8, 6000000, 3, 3, 3, '78.555.666-7', 1),
-(1009, '2026-04-28', 'Claudio Bravo', 'Alexis Sanchez', 9, 2000000, 4, 5, 10, '80.999.000-1', 2),
-(1010, '2026-04-30', 'Christian Garin', 'Nicolas Massu', 10, 4800000, 5, 8, 13, '76.111.222-3', 1),
-(1011, '2026-05-02', 'Mon Laferte', 'Myriam Hernandez', 11, 3200000, 1, 5, 5, '77.333.444-5', 1),
-(1012, '2026-05-05', 'Tomas Gonzalez', 'Fernando Gonzalez', 12, 7500000, 2, 13, 13, '81.123.456-7', 2),
-(1013, '2026-05-08', 'Leonor Varela', 'Daniela Vega', 13, 2800000, 3, 8, 8, '78.555.666-7', 1),
+(1008, '2026-04-25', 'Elena Caffarena', 'Amanda Labarca', 8, 6000000, 3, 3, 3, '78.555.666-7', 3),
+(1009, '2026-04-28', 'Claudio Bravo', 'Alexis Sanchez', 9, 2000000, 4, 5, 10, '80.999.000-1', 4),
+(1010, '2026-04-30', 'Christian Garin', 'Nicolas Massu', 10, 4800000, 5, 8, 13, '76.111.222-3', 5),
+(1011, '2026-05-02', 'Mon Laferte', 'Myriam Hernandez', 11, 3200000, 1, 5, 5, '77.333.444-5', 5),
+(1012, '2026-05-05', 'Tomas Gonzalez', 'Fernando Gonzalez', 12, 7500000, 2, 13, 13, '81.123.456-7', 3),
+(1013, '2026-05-08', 'Leonor Varela', 'Daniela Vega', 13, 2800000, 3, 8, 8, '78.555.666-7', 4),
 (1014, '2026-05-10', 'Stefan Kramer', 'Bombo Fica', 14, 8500000, 4, 6, 6, '76.111.222-3', 3),
-(1015, '2026-05-12', 'Benjamin Vicuña', 'Felipe Camiroaga', 15, 5400000, 5, 7, 7, '80.999.000-1', 2),
+(1015, '2026-05-12', 'Benjamin Vicuña', 'Felipe Camiroaga', 15, 5400000, 5, 7, 7, '80.999.000-1', 3),
 (1016, '2026-05-15', 'Nicanor Parra', 'Alejandro Jodorowsky', 16, 4600000, 1, 13, 13, '77.333.444-5', 4);
 
 INSERT INTO cronograma (codigo_postulacion, cod_etapa) VALUES 

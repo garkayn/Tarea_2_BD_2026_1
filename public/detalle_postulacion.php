@@ -11,26 +11,103 @@ if (!$codigo) {
     die("Error: No se especificó ninguna postulación.");
 }
 
+$mensaje_error = '';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $redireccionar = false;
+
+    // Acción postulante: Enviar postulación
+    if (isset($_POST['enviar_postulacion']) && $tipoUsuario == 1) {
+        try {
+            db()->beginTransaction();
+
+            // Llamadas a los procedimientos almacenados
+            $sqlRevisarEquipo = "CALL VerificarRequisitoEquipo(:codigo)";
+            $stmtRevisarEq = db()->prepare($sqlRevisarEquipo);
+            $stmtRevisarEq->execute(['codigo' => $codigo]);
+
+            $sqlRevisarCronograma = "CALL VerificarRequisitoCronograma(:codigo)";
+            $stmtRevisarCr = db()->prepare($sqlRevisarCronograma);
+            $stmtRevisarCr->execute(['codigo' => $codigo]);
+
+            // Si todo pasó, marcamos la postulación como "Enviada" (2)
+            $sqlEstado = "UPDATE postulacion SET id_estado_postulacion = 2 WHERE codigo_postulacion = :codigo";
+            $stmtEstado = db()->prepare($sqlEstado);
+            $stmtEstado->execute(['codigo' => $codigo]);
+
+            db()->commit();
+            $redireccionar = true;
+
+        } catch (Exception $e) {
+            db()->rollBack();
+            
+            // Extraer el mensaje de error
+            $error_crudo = $e->getMessage();
+            if ($e->getCode() == '45000' || strpos($error_crudo, '45000') !== false) {
+                $partes = explode('1644', $error_crudo);
+                if (isset($partes[1])) {
+                    $mensaje_error = trim(preg_replace('/\[.*?\]/', '', $partes[1])); 
+                } else {
+                    $mensaje_error = "La postulación no cumple con los requisitos mínimos.";
+                }
+            } else {
+                $mensaje_error = "Ocurrió un error inesperado al validar: " . $error_crudo;
+            }
+        }
+    }
+
+    // Acción postulante: Eliminar postulación
+    if (isset($_POST['eliminar_postulacion']) && $tipoUsuario == 1) {
+        
+        $stmtDelEq = db()->prepare("DELETE FROM equipo WHERE codigo_postulacion = :codigo");
+        $stmtDelEq->execute(['codigo' => $codigo]);
+
+        $stmtDelCron = db()->prepare("DELETE FROM cronograma WHERE codigo_postulacion = :codigo");
+        $stmtDelCron->execute(['codigo' => $codigo]);
+
+        $stmtDelIni = db()->prepare("DELETE FROM iniciativa WHERE codigo_postulacion = :codigo");
+        $stmtDelIni->execute(['codigo' => $codigo]);
+
+        // Eliminar la postulación principal
+        $sqlEliminar = "DELETE FROM postulacion WHERE codigo_postulacion = :codigo";
+        $stmtEliminar = db()->prepare($sqlEliminar);
+        $stmtEliminar->execute(['codigo' => $codigo]);
+
+        redirect_to("home.php");
+        exit();
+    }
 
     // Acción evaluador: Aceptar o rechazar
     if (isset($_POST['decision_evaluador']) && $tipoUsuario == 2) {
-        $nuevoEstado = ($_POST['decision_evaluador'] === 'aceptar') ? 3 : 4;
+        $nuevoEstado = ($_POST['decision_evaluador'] === 'aceptar') ? 4 : 5;
         $sqlEvaluar = "UPDATE postulacion SET id_estado_postulacion = :estado WHERE codigo_postulacion = :codigo";
         $stmtEvaluar = db()->prepare($sqlEvaluar);
         $stmtEvaluar->execute(['estado' => $nuevoEstado, 'codigo' => $codigo]);
+        $redireccionar = true;
     }
     
     // Acción administrador: Asignar evaluador
     if (isset($_POST['asignar_evaluador']) && $tipoUsuario == 3) {
         $evaluadorAsignado = $_POST['evaluador'];
-        $sqlAsignar = "UPDATE postulacion SET responsable_2 = :evaluador, id_estado_postulacion = 2 WHERE codigo_postulacion = :codigo";
+        $sqlAsignar = "UPDATE postulacion SET responsable_2 = :evaluador, id_estado_postulacion = 3 WHERE codigo_postulacion = :codigo";
         $stmtAsignar = db()->prepare($sqlAsignar);
         $stmtAsignar->execute(['evaluador' => $evaluadorAsignado, 'codigo' => $codigo]);
+        $redireccionar = true;
     }
 
-    // Recargar página
-    redirect_to("detalle_postulacion.php?codigo=" . urlencode($codigo));
+    // Acción administrador: Cerrar postulación
+    if (isset($_POST['cerrar_postulacion']) && $tipoUsuario == 3) {
+        $sqlEvaluar = "UPDATE postulacion SET id_estado_postulacion = 6 WHERE codigo_postulacion = :codigo";
+        $stmtEvaluar = db()->prepare($sqlEvaluar);
+        $stmtEvaluar->execute(['codigo' => $codigo]);
+        $redireccionar = true;
+    }
+
+    // Recargar página sólo si no hay errores
+    if ($redireccionar) {
+        redirect_to("detalle_postulacion.php?codigo=" . urlencode($codigo));
+        exit();
+    }
 }
 
 // Mostrar detalles principales de la postulación
@@ -57,7 +134,7 @@ if (!$datos) {
 
 // Si el usuario es admin, buscamos la lista de evaluadores para elegir
 $listaEvaluadores = [];
-if ($tipoUsuario == 3 && $datos['id_estado_postulacion'] == 1 && empty($datos['responsable_2'])) {
+if ($tipoUsuario == 3 && $datos['id_estado_postulacion'] == 2 && empty($datos['responsable_2'])) {
     $stmtEval = db()->query("SELECT username FROM usuario WHERE id_rol = 2");
     $listaEvaluadores = $stmtEval->fetchAll(PDO::FETCH_ASSOC);
 }
@@ -94,6 +171,16 @@ $etapas = $stmtEtapas->fetchAll(PDO::FETCH_ASSOC);
                 <h2 class="fw-bold mb-0">Detalle de Postulación: <span class="text-primary">#<?= htmlspecialchars($datos['numero_postulacion']) ?></span></h2>
                 <a href="home.php" class="btn btn-outline-secondary btn-sm">Volver al Inicio</a>
             </div>
+
+            <?php if (!empty($mensaje_error)): ?>
+                <div class="alert alert-danger d-flex align-items-center shadow-sm mb-4" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+                    <div>
+                        <strong>¡No se pudo enviar la postulación!</strong><br>
+                        <?= htmlspecialchars($mensaje_error) ?>
+                    </div>
+                </div>
+            <?php endif; ?>
             
             <h4 class="text-secondary fw-bold mt-4 mb-3"><i class="bi bi-info-circle"></i> 1. Datos Generales</h4>
             <div class="row g-3 bg-light p-4 rounded-3 mb-5">
@@ -233,20 +320,27 @@ $etapas = $stmtEtapas->fetchAll(PDO::FETCH_ASSOC);
             <?php endif; ?>
 
                 <div>
-                    <?php if ($tipoUsuario == 1): ?>
+                    <?php if ($tipoUsuario == 1 && $datos['id_estado_postulacion'] == 1): ?>
                         <a href="editar_postulacion.php?codigo=<?= urlencode($codigo) ?>" class="btn btn-primary fw-bold px-4">
                             Editar Postulación
                         </a>
+                        <form method="POST" class="d-inline-block">
+                            <button type="submit" name="enviar_postulacion" class="btn btn-success fw-bold px-4 me-2">Envíar</button>
+                        </form>
                     <?php endif; ?>
-
-                    <?php if ($tipoUsuario == 2 && $datos['responsable_2'] == $usuarioActual && $datos['id_estado_postulacion'] == 2): ?>
+                    <?php if ($tipoUsuario == 1): ?>    
+                        <form method="POST" class="d-inline-block" onsubmit="return confirm('¿Estás seguro de que deseas eliminar esta postulación? Esta acción no se puede deshacer.');">
+                            <button type="submit" name="eliminar_postulacion" class="btn btn-danger fw-bold px-4">Eliminar</button>
+                        </form>
+                    <?php endif; ?>
+                    <?php if ($tipoUsuario == 2 && $datos['responsable_2'] == $usuarioActual && $datos['id_estado_postulacion'] == 3): ?>
                         <form method="POST" class="d-inline-block">
                             <button type="submit" name="decision_evaluador" value="aceptar" class="btn btn-success fw-bold px-4 me-2">Aceptar Proyecto</button>
                             <button type="submit" name="decision_evaluador" value="rechazar" class="btn btn-danger fw-bold px-4">Rechazar Proyecto</button>
                         </form>
                     <?php endif; ?>
 
-                    <?php if ($tipoUsuario == 3 && $datos['id_estado_postulacion'] == 1 && empty($datos['responsable_2'])): ?>
+                    <?php if ($tipoUsuario == 3 && $datos['id_estado_postulacion'] == 2 && empty($datos['responsable_2'])): ?>
                         <form method="POST" class="d-flex align-items-center gap-2">
                             <select name="evaluador" class="form-select" required>
                                 <option value="">-- Seleccione Evaluador --</option>
@@ -255,6 +349,11 @@ $etapas = $stmtEtapas->fetchAll(PDO::FETCH_ASSOC);
                                 <?php endforeach; ?>
                             </select>
                             <button type="submit" name="asignar_evaluador" class="btn btn-primary fw-bold px-4">Asignar</button>
+                        </form>
+                    <?php endif; ?>
+                    <?php if ($tipoUsuario == 3 && ($datos['id_estado_postulacion'] == 4 || $datos['id_estado_postulacion'] == 5)): ?>
+                        <form method="POST" class="d-flex align-items-center gap-2">
+                            <button type="submit" name="cerrar_postulacion" class="btn btn-primary fw-bold px-4">Cerrar</button>
                         </form>
                     <?php endif; ?>
                 </div>

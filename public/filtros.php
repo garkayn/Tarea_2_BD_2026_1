@@ -14,6 +14,20 @@ if ($tipoUsuario != 3) {
     $condiciones[] = "(responsable_1 = :user1 OR responsable_2 = :user2)";
     $parametros['user1'] = $usuarioActual;
     $parametros['user2'] = $usuarioActual;
+} else {
+    $condiciones[] = "id_estado_postulacion != 1";
+}
+
+// Determina si se ocupa la barra de busqueda o el sistema de filtros combinables
+if (!empty($_GET['buscar'])) {
+    
+    // Si hay texto en el buscador, ignoramos los demás filtros.
+    $condiciones[] = "(
+        numero_postulacion LIKE :buscar OR 
+        nombre_iniciativa LIKE :buscar OR 
+        nombre_empresa LIKE :buscar
+    )";
+    $parametros['buscar'] = '%' . $_GET['buscar'] . '%';
 }
 
 if (!empty($_GET['id_region_ejecucion'])) {
@@ -48,9 +62,9 @@ if (!empty($_GET['responsable_2'])) {
 
 if (!empty($_GET['tamanio']) || !empty($_GET['convenio_usm'])) {
     $joins_extra = " LEFT JOIN empresa ON VistaMisPostulaciones.rut_empresa = empresa.rut_empresa 
-                     LEFT JOIN tamanio_empresa ON empresa.id_tamanio = tamanio_empresa.id_tamanio 
-                     LEFT JOIN convenio_usm ON empresa.id_convenio_usm = convenio_usm.id_convenio_usm ";
-                     
+                        LEFT JOIN tamanio_empresa ON empresa.id_tamanio = tamanio_empresa.id_tamanio 
+                        LEFT JOIN convenio_usm ON empresa.id_convenio_usm = convenio_usm.id_convenio_usm ";
+                        
     if (!empty($_GET['tamanio'])) {
         $condiciones[] = "tamanio_empresa.tamanio = :tamanio";
         $parametros['tamanio'] = $_GET['tamanio'];
@@ -62,16 +76,7 @@ if (!empty($_GET['tamanio']) || !empty($_GET['convenio_usm'])) {
     }
 }
 
-if (!empty($_GET['buscar'])) {
-    $condiciones[] = "(
-        numero_postulacion LIKE :buscar OR 
-        nombre_iniciativa LIKE :buscar OR 
-        nombre_empresa LIKE :buscar
-    )";
-    
-    $parametros['buscar'] = '%' . $_GET['buscar'] . '%';
-}
-
+// Armado final de la consulta
 $sql = "SELECT VistaMisPostulaciones.* FROM VistaMisPostulaciones " . $joins_extra;
 
 if (count($condiciones) > 0) {
