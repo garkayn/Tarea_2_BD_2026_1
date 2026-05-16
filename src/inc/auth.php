@@ -62,27 +62,3 @@ function current_user()
     }
     return null;
 }
-
-// Funciones para manejo de roles en página web
-function current_user_role()
-{
-    if (is_user_logged_in() && isset($_SESSION['id_rol'])) {
-        return $_SESSION['id_rol'];
-    }
-    return null;
-}
-
-function is_postulante(): bool
-{
-    return current_user_role() === 1;
-}
-
-function is_coordinador(): bool
-{
-    return current_user_role() === 2;
-}
-
-function is_admin(): bool
-{
-    return current_user_role() === 3;
-}

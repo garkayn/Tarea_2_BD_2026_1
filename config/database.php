@@ -1,6 +1,6 @@
 <?php
 $host = 'localhost'; 
-$dbname = 'ct_usm_postulaciones'; // Aquí está el nombre exacto de tu base de datos
+$dbname = 'ct_usm_postulaciones';
 $username = 'root'; 
 $password = ''; 
 

@@ -58,17 +58,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Acción postulante: Eliminar postulación
     if (isset($_POST['eliminar_postulacion']) && $tipoUsuario == 1) {
-        
-        $stmtDelEq = db()->prepare("DELETE FROM equipo WHERE codigo_postulacion = :codigo");
-        $stmtDelEq->execute(['codigo' => $codigo]);
 
-        $stmtDelCron = db()->prepare("DELETE FROM cronograma WHERE codigo_postulacion = :codigo");
-        $stmtDelCron->execute(['codigo' => $codigo]);
-
-        $stmtDelIni = db()->prepare("DELETE FROM iniciativa WHERE codigo_postulacion = :codigo");
-        $stmtDelIni->execute(['codigo' => $codigo]);
-
-        // Eliminar la postulación principal
+        // Eliminar la postulación principal (eliminación en cascada)
         $sqlEliminar = "DELETE FROM postulacion WHERE codigo_postulacion = :codigo";
         $stmtEliminar = db()->prepare($sqlEliminar);
         $stmtEliminar->execute(['codigo' => $codigo]);

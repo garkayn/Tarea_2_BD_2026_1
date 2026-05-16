@@ -21,7 +21,6 @@ if (is_post_request()) {
         redirect_with('login.php', ['errors' => $errors, 'inputs' => $inputs]);
     }
 
-    // if login fails
     if (!login($inputs['username'])) {
 
         $errors['username'] = 'Nombre de usuario incorrecto o no registrado';
@@ -31,7 +30,6 @@ if (is_post_request()) {
             'inputs' => $inputs
         ]);
     }
-    // login successfully
     redirect_to('home.php');
 
 } else if (is_get_request()) {

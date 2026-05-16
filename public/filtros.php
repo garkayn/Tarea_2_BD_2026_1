@@ -10,6 +10,7 @@ $condiciones = [];
 $parametros = [];
 $joins_extra = "";
 
+// Gestión de acceso según tipo de usuario
 if ($tipoUsuario != 3) {
     $condiciones[] = "(responsable_1 = :user1 OR responsable_2 = :user2)";
     $parametros['user1'] = $usuarioActual;
@@ -18,10 +19,8 @@ if ($tipoUsuario != 3) {
     $condiciones[] = "id_estado_postulacion != 1";
 }
 
-// Determina si se ocupa la barra de busqueda o el sistema de filtros combinables
+// Buscador
 if (!empty($_GET['buscar'])) {
-    
-    // Si hay texto en el buscador, ignoramos los demás filtros.
     $condiciones[] = "(
         numero_postulacion LIKE :buscar OR 
         nombre_iniciativa LIKE :buscar OR 
@@ -30,6 +29,7 @@ if (!empty($_GET['buscar'])) {
     $parametros['buscar'] = '%' . $_GET['buscar'] . '%';
 }
 
+// Filtros combinables
 if (!empty($_GET['id_region_ejecucion'])) {
     $condiciones[] = "id_region_ejecucion = :id_ejec";
     $parametros['id_ejec'] = $_GET['id_region_ejecucion'];

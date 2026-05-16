@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // Recibir datos ingresados por el usuario
     $presupuesto       = $_POST['presupuesto'];
-    $rutEmpresa        = $_POST['rut_empresa']; // Ahora este valor viene del <select>
+    $rutEmpresa        = $_POST['rut_empresa'];
     
     $idSede            = $_POST['id_sede'];
     $idRegionEjecucion = $_POST['id_region_ejecucion'];
@@ -122,7 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'tipo'     => $tipos[$i]
             ]);
 
-            // El rol sí se guarda en equipo, porque depende de la postulación
+            // El rol se guarda en equipo, porque depende de la postulación
             $sqlEquipo = "INSERT INTO equipo (codigo_postulacion, rut_integrante, rol_integrante) 
                           VALUES (:codigo, :rut, :rol)";
 

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Sanitize and validate data
+ * Sanitiza y valida la data
  * @param array $data
  * @param array $fields
  * @param array $messages
@@ -12,7 +12,6 @@ function filter(array $data, array $fields, array $messages = []): array
     $sanitization = [];
     $validation = [];
 
-    // extract sanitization & validation rules
     foreach ($fields as $field => $rules) {
         if (strpos($rules, '|')) {
             [$sanitization[$field], $validation[$field]] = explode('|', $rules, 2);

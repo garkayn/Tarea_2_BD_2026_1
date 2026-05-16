@@ -8,7 +8,7 @@ const FLASH_INFO = 'info';
 const FLASH_SUCCESS = 'success';
 
 /**
-* Create a flash message
+* Crea mensajes flash
 *
 * @param string $name
 * @param string $message
@@ -17,17 +17,15 @@ const FLASH_SUCCESS = 'success';
 */
 function create_flash_message(string $name, string $message, string $type): void
 {
-    // remove existing message with the name
     if (isset($_SESSION[FLASH][$name])) {
         unset($_SESSION[FLASH][$name]);
     }
-    // add the message to the session
     $_SESSION[FLASH][$name] = ['message' => $message, 'type' => $type];
 }
 
 
 /**
-* Format a flash message
+* Da formato al mensaje flash
 *
 * @param array $flash_message
 * @return string
@@ -41,7 +39,7 @@ function format_flash_message(array $flash_message): string
 }
 
 /**
-* Display a flash message
+* Muestra el mensaje flash
 *
 * @param string $name
 * @return void
@@ -52,18 +50,15 @@ function display_flash_message(string $name): void
         return;
     }
 
-    // get message from the session
     $flash_message = $_SESSION[FLASH][$name];
 
-    // delete the flash message
     unset($_SESSION[FLASH][$name]);
 
-    // display the flash message
     echo format_flash_message($flash_message);
 }
 
 /**
-* Display all flash messages
+* Muestra todos los mensajes flash
 *
 * @return void
 */
@@ -73,13 +68,10 @@ function display_all_flash_messages(): void
         return;
     }
 
-    // get flash messages
     $flash_messages = $_SESSION[FLASH];
 
-    // remove all the flash messages
     unset($_SESSION[FLASH]);
 
-    // show all flash messages
     foreach ($flash_messages as $flash_message) {
         echo format_flash_message($flash_message);
     }
@@ -96,13 +88,10 @@ function display_all_flash_messages(): void
 function flash(string $name = '', string $message = '', string $type = ''): void
 {
     if ($name !== '' && $message !== '' && $type !== '') {
-        // create a flash message
         create_flash_message($name, $message, $type);
     } elseif ($name !== '' && $message === '' && $type === '') {
-        // display a flash message
         display_flash_message($name);
     } elseif ($name === '' && $message === '' && $type === '') {
-        // display all flash message
         display_all_flash_messages();
     }
 }
